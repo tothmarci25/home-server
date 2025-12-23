@@ -1,0 +1,5 @@
+- name: Setup Wireguard
+  hosts: home-server
+  become: yes
+  roles:
+    - setup_wireguard

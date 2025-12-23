@@ -1,0 +1,7 @@
+- name: Install k8s
+  hosts: home-server
+  become: yes
+  roles:
+    - k8s_prepare
+    - k8s_init
+    - argocd_init

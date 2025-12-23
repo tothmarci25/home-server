@@ -1,0 +1,17 @@
+- name: Wait for Argo CD to be healthy
+  kubernetes.core.k8s_info:
+    kind: Application
+    namespace: argocd
+    name: infrastructure
+  register: infra_app
+  until:
+    - infra_app.resources | length > 0
+    - infra_app.resources[0].status.health.status == "Healthy"
+    - infra_app.resources[0].status.sync.status == "Synced"
+  retries: 30
+  delay: 10
+
+- name: Enable self-managed Argo CD (steady-state root app)
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../../k8s-manifests/overlays/self-managed/root-app.yaml"

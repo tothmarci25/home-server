@@ -1,0 +1,10 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  source:
+    repoURL: https://github.com/tothmarci25/home-server
+    targetRevision: main
+    path: k8s-manifests/infrastructure

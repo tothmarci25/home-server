@@ -1,0 +1,7 @@
+k8s_pod_network_cidr: "10.244.0.0/16"
+k8s_service_network_cidr: "10.96.0.0/16"
+k8s_cri_socket: "unix:///run/containerd/containerd.sock"
+k8s_user: "{{ ansible_user }}"
+k8s_home: "{{ ansible_env.HOME }}"
+flannel_manifest_url: "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml"
+k8s_allow_schedule_on_control_plane: true

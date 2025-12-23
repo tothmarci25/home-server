@@ -1,0 +1,9 @@
+metallb_namespace: metallb-system
+metallb_release_name: metallb
+metallb_chart_name: metallb/metallb
+
+metallb_ignore_exclude_lb: true
+
+metallb_values:
+  speaker:
+    ignoreExcludeLB: true

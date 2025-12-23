@@ -1,0 +1,100 @@
+- name: Ensure kubeadm is installed
+  apt:
+    name: kubeadm
+    state: present
+    update_cache: yes
+
+- name: Ensure Python Kubernetes client is installed
+  apt:
+    name: python3-kubernetes
+    state: present
+
+- name: Check if Kubernetes cluster is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_conf
+
+- name: Initialize Kubernetes cluster with kubeadm
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ k8s_pod_network_cidr }}
+    --service-cidr={{ k8s_service_network_cidr }}
+    --cri-socket={{ k8s_cri_socket }}
+  when: not kubeadm_conf.stat.exists
+  register: kubeadm_init
+  changed_when: "'initialized' in kubeadm_init.stdout"
+
+- name: Show HOME environment variable
+  debug:
+    var: ansible_env.HOME
+
+- name: Create kubeconfig directory for user
+  file:
+    path: "{{ k8s_home }}/.kube"
+    state: directory
+    mode: '0700'
+  when: not kubeadm_conf.stat.exists
+
+- name: Copy kubeconfig to user directory
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ k8s_home }}/.kube/config"
+    owner: "{{ k8s_user }}"
+    group: "{{ k8s_user }}"
+    mode: '0600'
+    remote_src: true  # othervwise copies from host machine
+  when: not kubeadm_conf.stat.exists
+
+- name: Allow Kube API server port
+  ufw:
+    rule: allow
+    port: 6443
+    proto: tcp
+
+#- name: Wait for node to be registered
+ # kubernetes.core.k8s_info:
+  #  kind: Node
+   # kubeconfig: /etc/kubernetes/admin.conf
+ # register: node_list
+ # retries: 20
+ # delay: 15
+ # until:
+  #  - node_list is succeeded
+   # - node_list.resources is defined
+    #- node_list.resources | length > 0
+
+- name: Apply Flannel CNI plugin
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ flannel_manifest_url }}"
+  when: not kubeadm_conf.stat.exists
+
+- name: Get current node object
+  kubernetes.core.k8s_info:
+    kind: Node
+    name: "{{ ansible_hostname }}"
+    kubeconfig: /etc/kubernetes/admin.conf
+  register: k8s_node
+
+- name: Remove control-plane taints only
+  kubernetes.core.k8s:
+    state: patched
+    kind: Node
+    name: "{{ k8s_node.resources[0].metadata.name }}"
+    kubeconfig: /etc/kubernetes/admin.conf
+    merge_type: strategic-merge
+    definition:
+      spec:
+        taints: >-
+          {{
+            k8s_node.resources[0].spec.taints
+            | default([])
+            | rejectattr('key', 'in', [
+                'node-role.kubernetes.io/control-plane',
+                'node-role.kubernetes.io/master'
+              ])
+            | list
+          }}
+  when:
+    - k8s_allow_schedule_on_control_plane
+    - k8s_node.resources | length > 0

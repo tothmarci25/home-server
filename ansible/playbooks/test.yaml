@@ -1,0 +1,5 @@
+- name: Test playbook
+  hosts: home-server
+  become: yes
+  roles:
+    - test_role

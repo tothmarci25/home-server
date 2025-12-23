@@ -1,0 +1,3 @@
+- name: Show playbook_dir
+  debug:
+    msg: "playbook_dir = {{ playbook_dir }}"

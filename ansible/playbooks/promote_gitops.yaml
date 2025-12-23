@@ -1,0 +1,5 @@
+- name: Promote GitOps
+  hosts: home-server
+  become: yes
+  roles:
+    - promote_gitops

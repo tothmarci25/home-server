@@ -1,0 +1,98 @@
+---
+# tasks file for roles/setup_wireguard
+- name: Install WireGuard and UFW
+  apt:
+    name:
+      - wireguard
+      - ufw
+    state: present
+    update_cache: yes
+
+- name: Ensure /etc/wireguard directory exists
+  file:
+    path: /etc/wireguard
+    state: directory
+    mode: '0700'
+
+- name: Generate WireGuard private key
+  command: wg genkey
+  register: wg_private_key
+  args:
+    creates: /etc/wireguard/server_private.key
+
+- name: Save private key
+  copy:
+    dest: /etc/wireguard/server_private.key
+    content: "{{ wg_private_key.stdout }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Generate WireGuard public key
+  command: bash -c "echo '{{ wg_private_key.stdout }}' | wg pubkey"
+  register: wg_public_key
+  args:
+    creates: /etc/wireguard/server_public.key
+
+- name: Save public key
+  copy:
+    dest: /etc/wireguard/server_public.key
+    content: "{{ wg_public_key.stdout }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+# Optional but very useful for visibility
+- name: Show detected public interface
+  debug:
+    msg: "Detected outbound interface: {{ ansible_default_ipv4.interface }}"
+
+- name: Create WireGuard server config
+  copy:
+    dest: "/etc/wireguard/{{ wg_interface }}.conf"
+    content: |
+      [Interface]
+      Address = {{ wg_server_ip }}/24
+      SaveConfig = true
+      ListenPort = {{ wg_port }}
+      PrivateKey = {{ wg_private_key.stdout }}
+
+      # Firewall rules applied when interface starts/stops
+      PostUp = ufw route allow in on {{ wg_interface }} out on {{ ansible_default_ipv4.interface }}
+      PostUp = iptables -t nat -I POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+      PreDown = ufw route delete allow in on {{ wg_interface }} out on {{ ansible_default_ipv4.interface }}
+      PreDown = iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+    owner: root
+    group: root
+    mode: '600'
+  notify: restart wireguard
+
+- name: Enable IPv4 forwarding persistently
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Allow WireGuard UDP port in UFW
+  ufw:
+    rule: allow
+    port: "{{ wg_port }}"
+    proto: udp
+
+- name: Allow SSH port
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+
+- name: Ensure UFW is enabled
+  ufw:
+    state: enabled
+
+- name: Enable and start WireGuard service
+  systemd:
+    name: "wg-quick@{{ wg_interface }}"
+    enabled: yes
+    state: started

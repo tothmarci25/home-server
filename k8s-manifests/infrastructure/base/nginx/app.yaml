@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.14.1
+    helm:
+      values: |
+        controller:
+          service:
+            ## Creates a service to expose the Ingress Controller pods.
+            create: true
+
+            ## The type of service to create for the Ingress Controller.
+            type: LoadBalancer
+            annotations:
+              metallb.universe.tf/address-pool: ingress-pool
+
+            ## Dual stack preference.
+            ## Valid values: SingleStack, PreferDualStack, RequireDualStack
+            ipFamilyPolicy: SingleStack
+
+            ## List of IP families assigned to this service.
+            ## Valid values: IPv4, IPv6
+            ipFamilies:
+              - IPv4
+
+          enableSnippets: true
+          logFormat: "json"
+          ingressClass:
+            name: nginx
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-ingress
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

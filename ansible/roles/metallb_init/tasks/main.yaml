@@ -1,0 +1,27 @@
+- name: Install Helm using official install script
+  ansible.builtin.shell: |
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 -o /tmp/get_helm.sh
+    chmod 700 /tmp/get_helm.sh
+    /tmp/get_helm.sh
+  args:
+    creates: /usr/local/bin/helm
+
+- name: Add MetalLB Helm repository
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+    state: present
+
+- name: Install / upgrade MetalLB via Helm
+  kubernetes.core.helm:
+    name: "{{ metallb_release_name }}"
+    chart_ref: "{{ metallb_chart_name }}"
+    release_namespace: "{{ metallb_namespace }}"
+    create_namespace: true
+    kubeconfig: /etc/kubernetes/admin.conf
+    values: >-
+      {{
+        metallb_ignore_exclude_lb
+        | ternary(metallb_values, {})
+      }}
+    state: present

@@ -1,0 +1,6 @@
+---
+# handlers file for roles/setup_wireguard
+- name: restart wireguard
+  systemd:
+    name: "wg-quick@{{ wg_interface }}"
+    state: restarted

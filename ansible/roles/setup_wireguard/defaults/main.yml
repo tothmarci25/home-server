@@ -1,0 +1,6 @@
+---
+# defaults file for roles/setup_wireguard
+wg_interface: wg0
+wg_port: 51820
+wg_network: 10.7.0.0/24
+wg_server_ip: 10.7.0.1

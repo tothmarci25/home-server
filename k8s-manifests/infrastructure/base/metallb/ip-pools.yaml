@@ -3,6 +3,8 @@ kind: IPAddressPool
 metadata:
   name: ingress-pool
   namespace: metallb-system
+annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   addresses:
   - 192.168.0.4/32

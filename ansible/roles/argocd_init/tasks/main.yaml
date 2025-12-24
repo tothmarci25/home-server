@@ -20,13 +20,16 @@
   register: argocd_pods
   until: >
     argocd_pods.resources | length > 0 and
-    (
-      argocd_pods.resources
-      | map(attribute='status.containerStatuses')
-      | flatten
-      | map(attribute='ready')
-      | min
-    )
+      (
+        argocd_pods.resources
+        | selectattr('status', 'defined')
+        | selectattr('status.containerStatuses', 'defined')
+        | map(attribute='status.containerStatuses')
+        | flatten
+        | map(attribute='ready')
+        | default([false])
+        | min
+      )
   retries: 30
   delay: 10
 

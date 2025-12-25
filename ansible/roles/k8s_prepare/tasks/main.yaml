@@ -77,26 +77,6 @@
     path: /run/containerd/containerd.sock
     timeout: 60
 
-- name: Install crictl
-  ansible.builtin.apt:
-    name: cri-tools
-    state: present
-    update_cache: yes
-
-- name: Configure crictl for containerd
-  ansible.builtin.copy:
-    dest: /etc/crictl.yaml
-    content: |
-      runtime-endpoint: unix:///run/containerd/containerd.sock
-      image-endpoint: unix:///run/containerd/containerd.sock
-
-- name: Wait for containerd API to respond
-  command: crictl info
-  retries: 10
-  delay: 5
-  register: crictl_result
-  until: crictl_result.rc == 0
-
 # =========================
 # Kubernetes APT repository (pkgs.k8s.io)
 # =========================

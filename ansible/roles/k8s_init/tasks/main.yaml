@@ -32,7 +32,7 @@
   file:
     path: "{{ k8s_home }}/.kube"
     state: directory
-    mode: '0700'
+    mode: "0700"
   when: not kubeadm_conf.stat.exists
 
 - name: Copy kubeconfig to user directory
@@ -41,8 +41,8 @@
     dest: "{{ k8s_home }}/.kube/config"
     owner: "{{ k8s_user }}"
     group: "{{ k8s_user }}"
-    mode: '0600'
-    remote_src: true  # othervwise copies from host machine
+    mode: "0600"
+    remote_src: true # othervwise copies from host machine
   when: not kubeadm_conf.stat.exists
 
 - name: Ensure UFW is enabled
@@ -56,22 +56,29 @@
     proto: tcp
 
 #- name: Wait for node to be registered
- # kubernetes.core.k8s_info:
-  #  kind: Node
-   # kubeconfig: /etc/kubernetes/admin.conf
- # register: node_list
- # retries: 20
- # delay: 15
- # until:
-  #  - node_list is succeeded
-   # - node_list.resources is defined
-    #- node_list.resources | length > 0
+# kubernetes.core.k8s_info:
+#  kind: Node
+# kubeconfig: /etc/kubernetes/admin.conf
+# register: node_list
+# retries: 20
+# delay: 15
+# until:
+#  - node_list is succeeded
+# - node_list.resources is defined
+#- node_list.resources | length > 0
 
 - name: Apply Flannel CNI plugin
   kubernetes.core.k8s:
     state: present
     src: "{{ flannel_manifest_url }}"
   when: not kubeadm_conf.stat.exists
+
+- name: Wait for API server to be stable
+  command: kubectl get --raw=/healthz
+  register: api_health
+  retries: 30
+  delay: 5
+  until: api_health.rc == 0
 
 - name: Get current node object
   kubernetes.core.k8s_info:
@@ -102,3 +109,7 @@
   when:
     - k8s_allow_schedule_on_control_plane
     - k8s_node.resources | length > 0
+
+- name: Let control plane settle
+  pause:
+    seconds: 30

@@ -45,6 +45,10 @@
     remote_src: true  # othervwise copies from host machine
   when: not kubeadm_conf.stat.exists
 
+- name: Ensure UFW is enabled
+  ufw:
+    state: enabled
+
 - name: Allow Kube API server port
   ufw:
     rule: allow

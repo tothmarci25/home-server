@@ -72,6 +72,18 @@
     enabled: true
     state: started
 
+- name: Wait for containerd socket
+  ansible.builtin.wait_for:
+    path: /run/containerd/containerd.sock
+    timeout: 60
+
+- name: Wait for containerd API to respond
+  command: crictl info
+  retries: 10
+  delay: 5
+  register: crictl_result
+  until: crictl_result.rc == 0
+
 # =========================
 # Kubernetes APT repository (pkgs.k8s.io)
 # =========================

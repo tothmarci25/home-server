@@ -1,1 +1,2 @@
 kubernetes_version: 1.35
+crictl_version: v1.35.0

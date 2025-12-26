@@ -4,7 +4,15 @@ metadata:
   name: root
   namespace: argocd
 spec:
+  project: default
   source:
     repoURL: https://github.com/tothmarci25/home-server
     targetRevision: main
     path: k8s-manifests/infrastructure/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

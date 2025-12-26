@@ -1,17 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bootstrap
+  name: metallb-config
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
     repoURL: https://github.com/tothmarci25/home-server
-    targetRevision: main
-    path: k8s-manifests/overlays/self-managed
+    targetRevision: HEAD
+    path: infrastructure/base/metallb/config
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: metallb-system
   syncPolicy:
     automated:
       prune: true

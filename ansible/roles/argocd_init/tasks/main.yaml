@@ -48,12 +48,12 @@
   copy:
     src: "{{ playbook_dir }}/../../k8s-manifests/bootstrap/root-app.yaml"
     dest: /tmp/root-app.yaml
-    mode: '0644'
+    mode: "0644"
 
 - name: Bootstrap GitOps (root App)
   kubernetes.core.k8s:
     state: present
-    src: "{{ playbook_dir }}/../../k8s-manifests/bootstrap/root-app.yaml"
+    src: /tmp/root-app.yaml
 
 - name: Remove temporary manifest
   file:

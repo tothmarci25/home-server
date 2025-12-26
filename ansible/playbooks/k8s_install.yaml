@@ -4,4 +4,3 @@
   roles:
     - k8s_prepare
     - k8s_init
-    - argocd_init

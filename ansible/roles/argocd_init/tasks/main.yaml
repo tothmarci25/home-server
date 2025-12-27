@@ -7,11 +7,49 @@
       metadata:
         name: "{{ argocd_namespace }}"
 
-- name: Install Argo CD
-  kubernetes.core.k8s:
+- name: Check if ArgoCD is self-managed
+  command: kubectl get application argocd -n argocd
+  register: argocd_self
+  failed_when: false
+  changed_when: false
+
+- name: Install Helm using official install script
+  ansible.builtin.shell: |
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 -o /tmp/get_helm.sh
+    chmod 700 /tmp/get_helm.sh
+    /tmp/get_helm.sh
+  args:
+    creates: /usr/local/bin/helm
+  when: argocd_self.rc != 0
+
+- name: Copy ArgoCD helm values file to server
+  copy:
+    src: "{{ playbook_dir }}/../../k8s-manifests/infrastructure/argocd/values.yaml"
+    dest: /tmp/argocd-helm-values.yaml
+    mode: "0644"
+  when: argocd_self.rc != 0
+
+- name: Add Argo CD Helm repository
+  community.kubernetes.helm_repository:
+    name: argo
+    repo_url: https://argoproj.github.io/argo-helm
+    update_cache: yes
     state: present
-    src: "{{ argocd_install_url }}"
-    namespace: "{{ argocd_namespace }}"
+  when: argocd_self.rc != 0
+
+- name: Install / upgrade Argo CD with Helm
+  community.kubernetes.helm:
+    name: argocd
+    chart_ref: argo/argo-cd
+    chart_version: "9.1.10"
+    namespace: argocd
+    create_namespace: false
+    values_files:
+      - "/tmp/argocd-helm-values.yaml"
+    wait: true
+    timeout: 600
+    force: true
+  when: argocd_self.rc != 0
 
 - name: Wait for Argo CD pods to be ready
   kubernetes.core.k8s_info:
@@ -32,6 +70,11 @@
       )
   retries: 30
   delay: 10
+
+- name: Remove Argo CD temporary helm values file
+  file:
+    path: /tmp/argocd-helm-values.yaml
+    state: absent
 
 - name: Get Argo CD admin password
   command: >

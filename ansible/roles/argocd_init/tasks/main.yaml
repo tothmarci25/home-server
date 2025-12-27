@@ -41,13 +41,12 @@
     name: argocd
     chart_ref: argo/argo-cd
     chart_version: "9.1.10"
-    namespace: argocd
+    release_namespace: "{{ argocd_namespace }}"
     create_namespace: false
+    kubeconfig: /etc/kubernetes/admin.conf
     values_files:
       - "/tmp/argocd-helm-values.yaml"
-    wait: true
-    timeout: 600
-    force: true
+    state: present
   when: argocd_self.rc != 0
 
 - name: Wait for Argo CD pods to be ready

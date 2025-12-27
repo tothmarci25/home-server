@@ -30,7 +30,7 @@
   when: argocd_self.rc != 0
 
 - name: Add Argo CD Helm repository
-  community.kubernetes.helm_repository:
+  kubernetes.core.helm_repository:
     name: argo
     repo_url: https://argoproj.github.io/argo-helm
     update_cache: yes
@@ -38,7 +38,7 @@
   when: argocd_self.rc != 0
 
 - name: Install / upgrade Argo CD with Helm
-  community.kubernetes.helm:
+  kubernetes.core.helm:
     name: argocd
     chart_ref: argo/argo-cd
     chart_version: "9.1.10"

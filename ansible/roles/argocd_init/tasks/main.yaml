@@ -33,7 +33,6 @@
   kubernetes.core.helm_repository:
     name: argo
     repo_url: https://argoproj.github.io/argo-helm
-    update_cache: yes
     state: present
   when: argocd_self.rc != 0
 

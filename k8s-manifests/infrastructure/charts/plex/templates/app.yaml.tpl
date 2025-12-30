@@ -1,4 +1,6 @@
-apiVersion: apps/v1
+{{- $app := .Values.apps.plex | default dict }}
+
+piVersion: apps/v1
 kind: Deployment
 metadata:
   name: plex

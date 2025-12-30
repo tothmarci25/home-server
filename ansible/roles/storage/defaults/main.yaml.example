@@ -1,0 +1,25 @@
+# List of USB disks to be mounted
+usb_disks:
+  - name: local
+    uuid: "<UUID of your storage device>"
+    size: 20G
+    storageClass: local-storage
+
+# Mapping apps to volumes
+app_storage_map:
+  plex:
+    extraVolumes:
+      - name: local
+        persistentVolumeClaim:
+          claimName: local-pvc
+    extraVolumeMounts:
+      - name: local
+        mountPath: /data
+        subPath: data/media
+      - name: local
+        mountPath: /config
+        subPath: config/plex
+
+# Node and repo info
+k8s_node_name: "{{ inventory_hostname }}"
+repo_root: "{{ playbook_dir }}/../.."

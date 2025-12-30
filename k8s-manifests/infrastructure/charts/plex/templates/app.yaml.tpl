@@ -1,4 +1,4 @@
-{{- $app := .Values.apps.plex | default dict }}
+{{- $app := (.Values.apps | default dict).plex | default dict }}
 
 piVersion: apps/v1
 kind: Deployment

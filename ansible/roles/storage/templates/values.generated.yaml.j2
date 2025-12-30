@@ -2,4 +2,4 @@ storages:
 {{ generated_storages | to_nice_yaml(indent=2) }}
 
 apps:
-  {{ generated_apps | to_nice_yaml(indent=2) }}
+{{ generated_apps | to_nice_yaml(indent=2) | indent(2) }}

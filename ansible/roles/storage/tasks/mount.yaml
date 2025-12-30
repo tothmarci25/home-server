@@ -16,7 +16,14 @@
     src: "UUID={{ item.uuid }}"
     fstype: "{{ item.fstype | default('ext4') }}"
     state: mounted
-  when: disk_checks.results[disk_idx].stat.exists
+  when: 
+    - disk_checks.results[disk_idx].stat.exists
+    - >
+      ansible_mounts
+      | selectattr('uuid', 'equalto', item.uuid)
+      | selectattr('mount', 'equalto', '/mnt/' ~ item.name)
+      | list
+      | length == 0
   loop: "{{ usb_disks }}"
   loop_control:
     index_var: disk_idx

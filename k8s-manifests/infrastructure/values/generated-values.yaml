@@ -8,14 +8,14 @@ storages:
 
 apps:
   plex:
-  extraVolumeMounts:
-  - mountPath: /data
-    name: local
-    subPath: data/media
-  - mountPath: /config
-    name: local
-    subPath: config/plex
-  extraVolumes:
-  - name: local
-    persistentVolumeClaim:
-      claimName: local-pvc
+    extraVolumeMounts:
+    - mountPath: /data
+      name: local
+      subPath: data/media
+    - mountPath: /config
+      name: local
+      subPath: config/plex
+    extraVolumes:
+    - name: local
+      persistentVolumeClaim:
+        claimName: local-pvc

@@ -16,19 +16,25 @@
     src: "UUID={{ item.uuid }}"
     fstype: "{{ item.fstype | default('ext4') }}"
     state: mounted
-  when: disk_checks.results[loop.index0].stat.exists
+  when: disk_checks.results[disk_idx].stat.exists
   loop: "{{ usb_disks }}"
+  loop_control:
+    index_var: disk_idx
 
 - name: Label node (disk present)
   command: >
     kubectl label node {{ k8s_node_name }}
     usb.{{ item.name }}=true --overwrite
-  when: disk_checks.results[loop.index0].stat.exists
+  when: disk_checks.results[disk_idx].stat.exists
   loop: "{{ usb_disks }}"
+  loop_control:
+    index_var: disk_idx
 
 - name: Label node (disk missing)
   command: >
     kubectl label node {{ k8s_node_name }}
     usb.{{ item.name }}=false --overwrite
-  when: not disk_checks.results[loop.index0].stat.exists
+  when: not disk_checks.results[disk_idx].stat.exists
   loop: "{{ usb_disks }}"
+  loop_control:
+    index_var: disk_idx

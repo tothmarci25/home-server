@@ -1,3 +1,5 @@
-- hosts: home-server
+- name: Generate storage configuration
+  hosts: home-server
+  become: yes
   roles:
     - storage

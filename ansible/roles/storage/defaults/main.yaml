@@ -1,0 +1,4 @@
+usb_disks: []
+app_storage_map: {}
+k8s_node_name: "{{ inventory_hostname }}"
+repo_root: "{{ playbook_dir }}/../.."

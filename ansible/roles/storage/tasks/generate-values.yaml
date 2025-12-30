@@ -1,0 +1,22 @@
+- name: Build storage values
+  set_fact:
+    generated_storages: >-
+      {{ generated_storages | default([]) + [{
+        'name': item.name,
+        'size': item.size,
+        'path': '/mnt/' ~ item.name,
+        'storageClass': item.storageClass | default('local-usb'),
+        'nodeLabel': 'usb.' ~ item.name
+      }] }}
+  loop: "{{ usb_disks }}"
+
+- name: Set apps values
+  set_fact:
+    generated_apps: "{{ app_storage_map }}"
+
+- name: Render aggregated Helm values
+  template:
+    src: values.generated.yaml.j2
+    dest: "{{ repo_root }}/k8s-manifests/infrastructure/values/generated-values.yaml"
+  delegate_to: localhost
+  become: false

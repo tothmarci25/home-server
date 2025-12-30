@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: storage
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  source:
+    repoURL: https://github.com/tothmarci25/home-server
+    path: k8s-manifests/infrastructure/charts/storage
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - ../values/generated-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

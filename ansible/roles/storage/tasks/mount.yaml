@@ -1,0 +1,34 @@
+- name: Check disks
+  stat:
+    path: "/dev/disk/by-uuid/{{ item.uuid }}"
+  register: disk_checks
+  loop: "{{ usb_disks }}"
+
+- name: Ensure mount dirs exist
+  file:
+    path: "/mnt/{{ item.name }}"
+    state: directory
+  loop: "{{ usb_disks }}"
+
+- name: Mount disks
+  mount:
+    path: "/mnt/{{ item.name }}"
+    src: "UUID={{ item.uuid }}"
+    fstype: "{{ item.fstype | default('ext4') }}"
+    state: mounted
+  when: disk_checks.results[loop.index0].stat.exists
+  loop: "{{ usb_disks }}"
+
+- name: Label node (disk present)
+  command: >
+    kubectl label node {{ k8s_node_name }}
+    usb.{{ item.name }}=true --overwrite
+  when: disk_checks.results[loop.index0].stat.exists
+  loop: "{{ usb_disks }}"
+
+- name: Label node (disk missing)
+  command: >
+    kubectl label node {{ k8s_node_name }}
+    usb.{{ item.name }}=false --overwrite
+  when: not disk_checks.results[loop.index0].stat.exists
+  loop: "{{ usb_disks }}"

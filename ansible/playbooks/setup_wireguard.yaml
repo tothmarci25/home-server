@@ -1,5 +1,5 @@
 - name: Setup Wireguard
-  hosts: home-server
+  hosts: staging,production
   become: yes
   roles:
     - setup_wireguard

@@ -1,5 +1,5 @@
 - name: Test playbook
-  hosts: home-server
+  hosts: staging,production
   become: yes
   roles:
     - test_role

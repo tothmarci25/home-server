@@ -1,15 +1,15 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: plex
+  name: storage
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: default
   source:
     repoURL: https://github.com/tothmarci25/home-server
-    path: k8s-manifests/infrastructure/charts/plex
+    path: k8s-manifests/infrastructure/charts/storage
     targetRevision: HEAD
     helm:
       valueFiles:

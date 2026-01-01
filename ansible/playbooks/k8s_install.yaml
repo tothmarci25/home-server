@@ -1,5 +1,5 @@
 - name: Install k8s
-  hosts: home-server
+  hosts: staging,production
   become: yes
   roles:
     - k8s_prepare

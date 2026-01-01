@@ -1,5 +1,5 @@
 - name: Generate storage configuration
-  hosts: home-server
+  hosts: staging,production
   become: yes
   roles:
     - storage

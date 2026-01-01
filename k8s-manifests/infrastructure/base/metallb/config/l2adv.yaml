@@ -6,3 +6,6 @@ metadata:
 spec:
   ipAddressPools:
     - ingress-pool
+    - dnsmasq-pool
+    - plex-pool
+    - qbittorrent-pool

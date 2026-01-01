@@ -93,7 +93,7 @@
 
 - name: Copy GitOps root app manifest to server
   copy:
-    src: "{{ playbook_dir }}/../../k8s-manifests/overlays/{{ environment }}/root-app.yaml"
+    src: "{{ playbook_dir }}/../../k8s-manifests/overlays/{{ hostvars[inventory_hostname]['environment'] }}/root-app.yaml"
     dest: /tmp/root-app.yaml
     mode: "0644"
 

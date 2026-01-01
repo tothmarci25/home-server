@@ -46,7 +46,7 @@ spec:
              pathType: Prefix
              backend:
                service:
-                 name: radarr-webui
+                 name: radarr-service
                  port:
                    number: 80
 

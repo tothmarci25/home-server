@@ -41,3 +41,27 @@ apps:
     - name: local-red
       persistentVolumeClaim:
         claimName: red-pvc
+  radarr:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/radarr
+    - mountPath: /data
+      name: local-ssd
+      subPath: data
+    - mountPath: /data/wd
+      name: local-wd
+      subPath: data/wd
+    - mountPath: /data/red
+      name: local-red
+      subPath: data/red
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
+    - name: local-wd
+      persistentVolumeClaim:
+        claimName: wd-pvc
+    - name: local-red
+      persistentVolumeClaim:
+        claimName: red-pvc

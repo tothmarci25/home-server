@@ -13,13 +13,12 @@ spec:
       chart: argo-cd
       targetRevision: 9.1.10   # pin version!
       helm:
-        helm:
-          valueFiles:
-            - $values/common/argocd-values.yaml
+        valueFiles:
+          - $values/common/argocd-values.yaml
 
     - repoURL: https://github.com/tothmarci25/home-server
       path: k8s-manifests/infrastructure/values
-      targetRevision: main
+      targetRevision: HEAD
       ref: values
 
   destination:

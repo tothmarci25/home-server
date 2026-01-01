@@ -14,11 +14,10 @@ spec:
       targetRevision: 9.1.10   # pin version!
       helm:
         valueFiles:
-          - $values/common/argocd-values.yaml
+          - $values/k8s-manifests/infrastructure/values/common/argocd-values.yaml
 
     - repoURL: https://github.com/tothmarci25/home-server
-      path: k8s-manifests/infrastructure/values
-      targetRevision: HEAD
+      targetRevision: main
       ref: values
 
   destination:

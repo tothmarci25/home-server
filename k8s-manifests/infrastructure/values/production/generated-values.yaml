@@ -34,7 +34,7 @@ apps:
     extraVolumes:
     - name: local-ssd
       persistentVolumeClaim:
-        claimName: local-pvc
+        claimName: ssd-pvc
     - name: local-wd
       persistentVolumeClaim:
         claimName: wd-pvc

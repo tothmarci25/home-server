@@ -30,7 +30,7 @@
 
 - name: Copy ArgoCD helm values file to server
   copy:
-    src: "{{ playbook_dir }}/../../k8s-manifests/overlays/common/argocd-values.yaml"
+    src: "{{ playbook_dir }}/../../k8s-manifests/infrastructure/values/common/argocd-values.yaml"
     dest: /tmp/argocd-helm-values.yaml
     mode: "0644"
   when: argocd_self.rc != 0

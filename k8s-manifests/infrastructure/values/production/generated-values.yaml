@@ -3,17 +3,17 @@ storages:
   nodeLabel: usb.ssd
   path: /mnt/ssd
   size: 2000Gi
-  storageClass: local-storage
+  storageClass: local-ssd
 - name: red
   nodeLabel: usb.red
   path: /mnt/red
   size: 8000Gi
-  storageClass: local-storage
+  storageClass: local-red
 - name: wd
   nodeLabel: usb.wd
   path: /mnt/wd
   size: 2000Gi
-  storageClass: local-storage
+  storageClass: local-wd
 
 
 apps:

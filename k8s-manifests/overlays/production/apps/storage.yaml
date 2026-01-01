@@ -13,7 +13,7 @@ spec:
     targetRevision: HEAD
     helm:
       valueFiles:
-        - ../generated-values.yaml
+        - ../../values/production/generated-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: default

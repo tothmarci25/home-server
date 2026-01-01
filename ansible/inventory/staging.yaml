@@ -1,6 +1,6 @@
 all:
   children:
-    multipass:
+    staging:
       hosts:
         multipass-vm-name:
           ansible_host: "{{ lookup('env', 'SERVER_IP') }}"

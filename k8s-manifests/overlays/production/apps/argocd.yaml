@@ -14,7 +14,7 @@ spec:
     targetRevision: 9.1.10   # pin version!
     helm:
       valueFiles:
-        - ../../common/argocd-values.yaml
+        - ../../../values/common/argocd-values.yaml
 
   destination:
     server: https://kubernetes.default.svc

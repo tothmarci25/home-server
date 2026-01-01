@@ -1,6 +1,6 @@
 all:
   children:
-    home-server:
+    production:
       hosts:
         tothmarci25-homeserver:
           ansible_host: "{{ lookup('env', 'SERVER_IP') }}"

@@ -32,6 +32,8 @@
   command: >
     kubectl label node {{ k8s_node_name }}
     usb.{{ item.name }}=true --overwrite
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
   when: disk_checks.results[disk_idx].stat.exists
   loop: "{{ usb_disks }}"
   loop_control:
@@ -41,6 +43,8 @@
   command: >
     kubectl label node {{ k8s_node_name }}
     usb.{{ item.name }}=false --overwrite
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
   when: not disk_checks.results[disk_idx].stat.exists
   loop: "{{ usb_disks }}"
   loop_control:

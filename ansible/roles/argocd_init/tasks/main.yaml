@@ -1,6 +1,12 @@
+- name: Ensure Python Kubernetes client is installed
+  apt:
+    name: python3-kubernetes
+    state: present
+
 - name: Create Argo CD namespace
   kubernetes.core.k8s:
     state: present
+    kubeconfig: /etc/kubernetes/admin.conf
     definition:
       apiVersion: v1
       kind: Namespace
@@ -57,6 +63,7 @@
 
 - name: Wait for Argo CD pods to be ready
   kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
     kind: Pod
     namespace: "{{ argocd_namespace }}"
   register: argocd_pods
@@ -80,16 +87,23 @@
     path: /tmp/argocd-helm-values.yaml
     state: absent
 
-- name: Get Argo CD admin password
-  command: >
-    kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret
-    -o jsonpath="{.data.password}"
-  register: argocd_admin_password
-  changed_when: false
+- name: Get Argo CD initial admin secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: /etc/kubernetes/admin.conf
+  register: argocd_admin_secret
+
+- name: Decode Argo CD admin password
+  set_fact:
+    argocd_admin_password: >-
+      {{ argocd_admin_secret.resources[0].data.password | b64decode }}
 
 - name: Show Argo CD admin password
   debug:
-    msg: "Argo CD admin password: {{ argocd_admin_password.stdout | b64decode }}"
+    msg: "Argo CD admin password: {{ argocd_admin_password }}"
 
 - name: Copy GitOps root app manifest to server
   copy:
@@ -99,6 +113,7 @@
 
 - name: Bootstrap GitOps (root App)
   kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     src: /tmp/root-app.yaml
 

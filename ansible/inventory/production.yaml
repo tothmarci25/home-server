@@ -10,4 +10,4 @@ all:
         ansible_become_pass: "{{ lookup('env', 'SUDO_PASSWORD') }}"
         ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_KEY') }}"
         ansible_python_interpreter: /usr/bin/python3
-        environment: production
+        deploy_env: production

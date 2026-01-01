@@ -19,3 +19,15 @@ apps:
     - name: local
       persistentVolumeClaim:
         claimName: local-pvc
+  radarr:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local
+      subPath: config/radarr
+    - mountPath: /data
+      name: local
+      subPath: data
+    extraVolumes:
+    - name: local
+      persistentVolumeClaim:
+        claimName: local-pvc

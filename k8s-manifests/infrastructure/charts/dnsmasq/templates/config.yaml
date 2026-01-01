@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dnsmasq-config
+  namespace: default
+data:
+  dnsmasq.conf: |
+    # Use upstream DNS servers
+    server=8.8.8.8
+    server=1.1.1.1
+
+    # Listen on all interfaces (important for MetalLB exposure)
+    # interface=eth0
+    # bind-interfaces
+
+    # Prevent using /etc/resolv.conf
+    no-resolv
+
+    # Log DNS queries (optional)
+    log-queries
+
+    # Cache size
+    cache-size=1000
+
+    # Assign custom local hostnames
+    address=/qbittorrent.home/192.168.0.4
+    address=/sonarr.home/192.168.0.4
+    address=/radarr.home/192.168.0.4
+    address=/jackett.home/192.168.0.4
+    address=/filebrowser.home/192.168.0.4
+    address=/plex.home/192.168.0.4
+    address=/argocd.home/192.168.0.4

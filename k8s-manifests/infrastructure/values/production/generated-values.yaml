@@ -1,0 +1,43 @@
+storages:
+- name: ssd
+  nodeLabel: usb.ssd
+  path: /mnt/ssd
+  size: 2000Gi
+  storageClass: local-storage
+- name: red
+  nodeLabel: usb.red
+  path: /mnt/red
+  size: 8000Gi
+  storageClass: local-storage
+- name: wd
+  nodeLabel: usb.wd
+  path: /mnt/wd
+  size: 2000Gi
+  storageClass: local-storage
+
+
+apps:
+  plex:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/plex
+    - mountPath: /data
+      name: local-ssd
+      subPath: data/media
+    - mountPath: /data/wd
+      name: local-wd
+      subPath: data/wd/media
+    - mountPath: /data/red
+      name: local-red
+      subPath: data/red/media
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: local-pvc
+    - name: local-wd
+      persistentVolumeClaim:
+        claimName: wd-pvc
+    - name: local-red
+      persistentVolumeClaim:
+        claimName: red-pvc

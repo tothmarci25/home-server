@@ -72,6 +72,17 @@ spec:
                  port:
                    number: 32400
 
+    - host: test.tothmarci25.com
+      http:
+        paths:
+           - path: /
+             pathType: Prefix
+             backend:
+               service:
+                 name: plex-service
+                 port:
+                   number: 32400
+
 #    - host: plex.home
 #      http:
 #        paths:

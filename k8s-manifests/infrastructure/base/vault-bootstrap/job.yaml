@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-bootstrap
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backoffLimit: 30
+  template:
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: bootstrap
+          image: hashicorp/vault:1.15.6
+
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              echo "Waiting for Vault to be unsealed..."
+              until vault status | grep -q 'Sealed *false'; do
+                sleep 5
+              done
+
+              echo "Vault is unsealed. Starting bootstrap."
+
+              echo "Enabling KV v2 (idempotent)..."
+              vault secrets enable -path=kv kv-v2 || true
+
+              echo "Enabling Kubernetes auth (idempotent)..."
+              vault auth enable kubernetes || true
+
+              echo "Configuring Kubernetes auth..."
+              vault write auth/kubernetes/config \
+                kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+                kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
+
+              echo "Writing cloudflared policy..."
+              vault policy write cloudflared /policies/cloudflared.hcl
+
+              echo "Creating cloudflared role..."
+              vault write auth/kubernetes/role/cloudflared \
+                bound_service_account_names=cloudflared \
+                bound_service_account_namespaces=cloudflared \
+                policies=cloudflared \
+                ttl=24h
+
+              echo "Vault bootstrap completed successfully."
+
+          env:
+            - name: VAULT_ADDR
+              value: http://vault.vault.svc:8200
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vault-bootstrap-token
+                  key: token
+
+          volumeMounts:
+            - name: policies
+              mountPath: /policies
+              readOnly: true
+
+      volumes:
+        - name: policies
+          configMap:
+            name: vault-policies

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: default
+data:
+  config.yml: |
+    tunnel: db1372a6-41de-4aaf-b6ec-b1459ea3d54a
+    credentials-file: /etc/cloudflared/credentials.json
+    ingress:
+      - hostname: test.tothmarci25.com
+        service: http://192.168.0.4:80
+      - service: http_status:404

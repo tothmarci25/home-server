@@ -2,9 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared-tunnel
-  namespace: cloudflared
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
       app: cloudflared
@@ -13,17 +15,22 @@ spec:
       labels:
         app: cloudflared
     spec:
-      serviceAccountName: cloudflared
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest
         args:
-         # - cloudflared
-         # - tunnel
+          - tunnel
           - --config
           - /etc/cloudflared/config.yml
           - run
-        command: ["cloudflared", "tunnel"]
+          - $(TUNNEL_ID)
+        env:
+        - name: TUNNEL_ID
+          valueFrom:
+            secretKeyRef:
+              name: cloudflared-secrets
+              key: tunnel-id
         volumeMounts:
         - name: cloudflared-config
           mountPath: /etc/cloudflared/config.yml
@@ -33,13 +40,18 @@ spec:
           mountPath: /etc/cloudflared/credentials.json
           subPath: credentials.json
           readOnly: true
+        - name: vault-secrets
+          mountPath: /etc/cloudflared/tunnel-id
+          subPath: tunnel-id
+          readOnly: true
       volumes:
+      - name: cloudflared-config
+        configMap:
+          name: cloudflared-config
       - name: vault-secrets
         csi:
           driver: secrets-store.csi.k8s.io
           readOnly: true
           volumeAttributes:
             secretProviderClass: cloudflared-vault
-      - name: cloudflared-config
-        configMap:
-          name: cloudflared-config
+

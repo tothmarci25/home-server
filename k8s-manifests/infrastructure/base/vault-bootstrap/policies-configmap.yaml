@@ -7,6 +7,6 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
 data:
   cloudflared.hcl: |
-    path "secret/data/cloudflared/*" {
+    path "kv/data/cloudflared/*" {
       capabilities = ["read"]
     }

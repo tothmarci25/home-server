@@ -1,0 +1,46 @@
+server:
+  enabled: true
+
+  replicas: 1
+
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: vault-storage-pv
+
+  auditStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: vault-audit-pv
+
+  extraEnvironmentVars:
+    VAULT_LOG_LEVEL: info
+
+  ha:
+    enabled: false
+
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+
+      listener "tcp" {
+        address     = "0.0.0.0:8200"
+        tls_disable = 1
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+      disable_mlock = true
+
+ui:
+  enabled: true
+
+injector:
+  enabled: false   # you are using CSI, not injector
+
+csi:
+  enabled: true    # installs Vault CSI provider automatically
+

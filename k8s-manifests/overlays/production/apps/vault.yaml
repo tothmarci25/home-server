@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/tothmarci25/home-server
+      path: k8s-manifests/infrastructure/charts/vault
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - ../../values/production/vault-pv-values.yaml
+    - repoURL: https://helm.releases.hashicorp.com
+      chart: vault
+      targetRevision: 0.31.0
+      helm:
+        valueFiles:
+          - $values/k8s-manifests/infrastructure/values/production/vault-values.yaml
+    - repoURL: https://github.com/tothmarci25/home-server
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

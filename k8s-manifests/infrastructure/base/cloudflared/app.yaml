@@ -26,10 +26,12 @@ spec:
         command: ["cloudflared", "tunnel"]
         volumeMounts:
         - name: cloudflared-config
-          mountPath: /etc/cloudflared/config
+          mountPath: /etc/cloudflared/config.yml
+          subPath: config.yml
           readOnly: true
         - name: vault-secrets
-          mountPath: /etc/cloudflared
+          mountPath: /etc/cloudflared/credentials.json
+          subPath: credentials.json
           readOnly: true
       volumes:
       - name: vault-secrets

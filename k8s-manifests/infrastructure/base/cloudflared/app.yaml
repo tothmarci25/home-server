@@ -21,7 +21,7 @@ spec:
          # - cloudflared
          # - tunnel
           - --config
-          - /etc/cloudflared/config/config.yml
+          - /etc/cloudflared/config.yml
           - run
         command: ["cloudflared", "tunnel"]
         volumeMounts:

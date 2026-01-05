@@ -14,7 +14,6 @@ spec:
         app: cloudflared
     spec:
       serviceAccountName: cloudflared
-      automountServiceAccountToken: true
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest

@@ -15,7 +15,7 @@ spec:
       labels:
         app: cloudflared
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: cloudflared
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest

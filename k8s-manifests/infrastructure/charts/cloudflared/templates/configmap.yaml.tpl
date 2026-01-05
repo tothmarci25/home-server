@@ -7,8 +7,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 data:
   config.yml: |
-    # Tunnel ID will be injected from environment variable
-    # which comes from Vault secret
+    # Tunnel ID and credentials are loaded from Vault via CSI driver
+    tunnel: /etc/cloudflared/tunnel-id
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
 {{- range .Values.tunnel.ingress }}

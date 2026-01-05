@@ -19,10 +19,11 @@ spec:
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest
-        command: ["/bin/sh", "-c"]
         args:
-          - |
-            tunnel run --config /etc/cloudflared/config.yml $(cat /etc/cloudflared/tunnel-id)
+          - tunnel
+          - --config
+          - /etc/cloudflared/config.yml
+          - run
         volumeMounts:
         - name: cloudflared-config
           mountPath: /etc/cloudflared/config.yml

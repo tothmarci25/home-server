@@ -50,6 +50,30 @@ apps:
     - name: local-red
       persistentVolumeClaim:
         claimName: red-pvc
+  qbittorrent:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/qbittorrent
+    - mountPath: /data/torrents
+      name: local-ssd
+      subPath: data/torrents
+    - mountPath: /data/wd/torrents
+      name: local-wd
+      subPath: data/wd/torrents
+    - mountPath: /data/red/torrents
+      name: local-red
+      subPath: data/red/torrents
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
+    - name: local-wd
+      persistentVolumeClaim:
+        claimName: wd-pvc
+    - name: local-red
+      persistentVolumeClaim:
+        claimName: red-pvc
   radarr:
     extraVolumeMounts:
     - mountPath: /config

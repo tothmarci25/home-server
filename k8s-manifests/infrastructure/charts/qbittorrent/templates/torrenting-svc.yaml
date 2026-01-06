@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent-torrenting
+  labels:
+    app: qbittorrent
+  annotations:
+    metallb.universe.tf/address-pool: qbittorrent-pool
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - name: torrenting-tcp
+      port: 6887
+      targetPort: 6887
+      protocol: TCP
+    - name: torrenting-udp
+      port: 6887
+      targetPort: 6887
+      protocol: UDP
+  type: LoadBalancer

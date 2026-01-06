@@ -17,6 +17,8 @@ server:
       nginx.ingress.kubernetes.io/backend-protocol: HTTP
     hostname: "argocd.home"
     pathType: Prefix
+    extraHosts:
+      - name: argocd.tothmarci25.com
 
 controller:
   replicas: 1

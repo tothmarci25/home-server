@@ -1,4 +1,4 @@
-{{- $app := (.Values.apps | default dict).plex | default dict }}
+{{- $app := (.Values.apps | default dict).jackett | default dict }}
 
 apiVersion: apps/v1
 kind: Deployment

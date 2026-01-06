@@ -57,7 +57,7 @@ spec:
              pathType: Prefix
              backend:
                service:
-                 name: jackett-webui
+                 name: jackett-service
                  port:
                    number: 80
 

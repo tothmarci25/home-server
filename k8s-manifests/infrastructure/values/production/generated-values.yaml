@@ -17,6 +17,15 @@ storages:
 
 
 apps:
+  jackett:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/jackett
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
   plex:
     extraVolumeMounts:
     - mountPath: /config

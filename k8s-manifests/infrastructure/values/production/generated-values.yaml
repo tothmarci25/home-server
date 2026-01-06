@@ -17,6 +17,30 @@ storages:
 
 
 apps:
+  filebrowser:
+    extraVolumeMounts:
+    - mountPath: /srv/ssd
+      name: local-ssd
+    - mountPath: /srv/wd
+      name: local-wd
+    - mountPath: /srv/red
+      name: local-red
+    - mountPath: /database/filebrowser.db
+      name: local-ssd
+      subPath: filebrowser/filebrowser.db
+    - mountPath: /config/settings.json
+      name: local-ssd
+      subPath: filebrowser/settings.json
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
+    - name: local-wd
+      persistentVolumeClaim:
+        claimName: wd-pvc
+    - name: local-red
+      persistentVolumeClaim:
+        claimName: red-pvc
   jackett:
     extraVolumeMounts:
     - mountPath: /config

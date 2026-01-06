@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: filebrowser-service
+  labels:
+    app: filebrowser
+ # annotations:
+  #  metallb.universe.tf/address-pool: filebrowser-pool
+spec:
+  selector:
+    app: filebrowser
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

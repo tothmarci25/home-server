@@ -101,6 +101,6 @@ spec:
              pathType: Prefix
              backend:
                service:
-                 name: filebrowser-svc
+                 name: filebrowser-service
                  port:
                    number: 80

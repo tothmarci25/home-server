@@ -18,7 +18,9 @@ server:
     hostname: "argocd.home"
     pathType: Prefix
     extraHosts:
-      - name: argocd.tothmarci25.com
+      - name: argocd-webhook.tothmarci25.com
+        path: /api/webhook
+        pathType: Exact
 
 controller:
   replicas: 1

@@ -2,7 +2,7 @@ tunnel:
   ingress:
     - hostname: plex.tothmarci25.com
       service: http://192.168.0.4:80
-    - hostname: argocd.tothmarci25.com
+    - hostname: argocd-webhook.tothmarci25.com
       service: http://192.168.0.4:80
     # Catch-all rule (required)
     - service: http_status:404

@@ -1,18 +1,18 @@
 # Staging environment values for vault persistent volumes
 
 # Node name where the PVs will be created
-nodeName: "fragrant-dingo"
+nodeName: "ubuntu-ansible-test"
 
 # Storage class for the persistent volumes
 
 # Vault data persistent volume configuration
 data:
   storage: "10Gi"
-  localPath: "/mnt/local/vault-data"
+  localPath: "/mnt/ssd/vault-data"
   storageClassName: "vault-storage-pv"
 
 # Vault audit persistent volume configuration
 audit:
   storage: "5Gi"
-  localPath: "/mnt/local/vault-audit"
+  localPath: "/mnt/ssd/vault-audit"
   storageClassName: "vault-audit-pv"

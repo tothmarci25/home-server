@@ -1,0 +1,18 @@
+vault operator init (root token and unseal keys)
+
+vault operator unseal (3 times with 3 different unseal key)
+
+vault login <root token>
+
+vault token create -ttl=15m (temporary token)
+
+kubectl -n vault create secret generic vault-bootstrap-token \
+  --from-literal=token=s.xxxxx
+
+vault kv put kv/cloudflared \
+  credentials.json=@credentials.json \
+  tunnel-id="123"
+
+vault kv get kv/cloudflared (kv/data/cloudflared in CSI StorageProviderClass and policy)
+
+

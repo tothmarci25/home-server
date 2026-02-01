@@ -1,2 +1,6 @@
 .env
 .vscode/
+
+# Cloudflare tunnel credentials (should be in Vault, not Git)
+**/credentials.json
+**/cert.pem

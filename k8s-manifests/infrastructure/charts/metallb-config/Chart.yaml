@@ -1,0 +1,5 @@
+apiVersion: v2
+name: metallb
+description: MetalLB configuration for load balancer IP pools and L2 advertisements
+type: application
+version: 0.1.0

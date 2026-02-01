@@ -1,0 +1,23 @@
+ipAddressPools:
+  - name: ingress-pool
+    addresses:
+      - 192.168.0.14/32
+  
+  - name: qbittorrent-pool
+    addresses:
+      - 192.168.0.15/32
+  
+  - name: plex-pool
+    addresses:
+      - 192.168.0.16/32
+  
+  - name: dnsmasq-pool
+    addresses:
+      - 192.168.0.18/32
+
+l2Advertisement:
+  ipAddressPools:
+    - ingress-pool
+    - dnsmasq-pool
+    - plex-pool
+    - qbittorrent-pool

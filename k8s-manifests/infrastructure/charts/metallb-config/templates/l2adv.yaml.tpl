@@ -5,7 +5,6 @@ metadata:
   namespace: metallb-system
 spec:
   ipAddressPools:
-    - ingress-pool
-    - dnsmasq-pool
-    - plex-pool
-    - qbittorrent-pool
+  {{- range .Values.l2Advertisement.ipAddressPools }}
+    - {{ . }}
+  {{- end }}

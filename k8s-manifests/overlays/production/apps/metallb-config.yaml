@@ -10,7 +10,10 @@ spec:
   source:
     repoURL: https://github.com/tothmarci25/home-server
     targetRevision: HEAD
-    path: k8s-manifests/infrastructure/base/metallb/config
+    path: k8s-manifests/infrastructure/charts/metallb-config
+    helm:
+      valueFiles:
+        - ../../values/production/metallb-config-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system

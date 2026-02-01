@@ -27,7 +27,7 @@
 
 - name: Install Helm using official install script
   ansible.builtin.shell: |
-    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 -o /tmp/get_helm.sh
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 -o /tmp/get_helm.sh
     chmod 700 /tmp/get_helm.sh
     /tmp/get_helm.sh
   args:
@@ -52,7 +52,7 @@
   kubernetes.core.helm:
     name: argocd
     chart_ref: argo/argo-cd
-    chart_version: "9.1.10"
+    chart_version: "9.3.7"
     release_namespace: "{{ argocd_namespace }}"
     create_namespace: false
     kubeconfig: /etc/kubernetes/admin.conf

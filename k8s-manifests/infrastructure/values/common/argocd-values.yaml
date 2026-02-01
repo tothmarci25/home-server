@@ -1,6 +1,6 @@
 global:
   image:
-    tag: v3.2.2   # must match chart compatibility
+    tag: v3.2.6   # must match chart compatibility
 
 configs:
   params:

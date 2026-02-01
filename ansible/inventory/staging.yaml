@@ -2,10 +2,11 @@ all:
   children:
     staging:
       hosts:
-        multipass-vm-name:
+        ubuntu-ansible-test:
           ansible_host: "{{ lookup('env', 'SERVER_IP') }}"
       vars:
         ansible_user: "{{ lookup('env', 'SERVER_USER') }}"
+        ansible_become_pass: "{{ lookup('env', 'SUDO_PASSWORD') }}"
         ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_KEY') }}"
         ansible_python_interpreter: /usr/bin/python3
         deploy_env: staging

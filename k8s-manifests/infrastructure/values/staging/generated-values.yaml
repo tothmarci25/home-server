@@ -1,33 +1,80 @@
 storages:
-- name: local
-  nodeLabel: usb.local
-  path: /mnt/local
-  size: 20G
-  storageClass: local-storage
+- name: ssd
+  nodeLabel: usb.ssd
+  path: /mnt/ssd
+  size: 16Gi
+  storageClass: local-ssd
 
 
 apps:
+  filebrowser:
+    extraVolumeMounts:
+    - mountPath: /srv/ssd
+      name: local-ssd
+    - mountPath: /database/filebrowser.db
+      name: local-ssd
+      subPath: filebrowser/filebrowser.db
+    - mountPath: /config/settings.json
+      name: local-ssd
+      subPath: filebrowser/settings.json
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
+  jackett:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/jackett
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
   plex:
     extraVolumeMounts:
-    - mountPath: /data
-      name: local
-      subPath: data/media
     - mountPath: /config
-      name: local
+      name: local-ssd
       subPath: config/plex
+    - mountPath: /data
+      name: local-ssd
+      subPath: data/media
     extraVolumes:
-    - name: local
+    - name: local-ssd
       persistentVolumeClaim:
-        claimName: local-pvc
+        claimName: ssd-pvc
+  qbittorrent:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/qbittorrent
+    - mountPath: /data/torrents
+      name: local-ssd
+      subPath: data/torrents
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc
   radarr:
     extraVolumeMounts:
     - mountPath: /config
-      name: local
+      name: local-ssd
       subPath: config/radarr
     - mountPath: /data
-      name: local
+      name: local-ssd
       subPath: data
     extraVolumes:
-    - name: local
+    - name: local-ssd
       persistentVolumeClaim:
-        claimName: local-pvc
+        claimName: ssd-pvc
+  sonarr:
+    extraVolumeMounts:
+    - mountPath: /config
+      name: local-ssd
+      subPath: config/sonarr
+    - mountPath: /data
+      name: local-ssd
+      subPath: data
+    extraVolumes:
+    - name: local-ssd
+      persistentVolumeClaim:
+        claimName: ssd-pvc

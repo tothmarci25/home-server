@@ -1,0 +1,84 @@
+# List of USB disks to be mounted
+usb_disks:
+  - name: ssd
+    uuid: "<UUID of your storage device>"
+    size: 16Gi
+    storageClass: local-ssd
+
+# Mapping apps to volumes
+app_storage_map:
+  plex:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/plex
+      - name: local-ssd
+        mountPath: /data
+        subPath: data/media
+  radarr:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/radarr
+      - name: local-ssd
+        mountPath: /data
+        subPath: data
+  sonarr:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/sonarr
+      - name: local-ssd
+        mountPath: /data
+        subPath: data
+  jackett:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/jackett
+  qbittorrent:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/qbittorrent
+      - name: local-ssd
+        mountPath: /data/torrents
+        subPath: data/torrents
+  filebrowser:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /srv/ssd
+      - name: local-ssd
+        mountPath: /database/filebrowser.db
+        subPath: filebrowser/filebrowser.db
+      - name: local-ssd
+        mountPath: /config/settings.json
+        subPath: filebrowser/settings.json
+      
+# Node and repo info
+k8s_node_name: "{{ inventory_hostname }}"
+repo_root: "{{ playbook_dir }}/../.."

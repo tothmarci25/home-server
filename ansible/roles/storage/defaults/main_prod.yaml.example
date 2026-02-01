@@ -1,0 +1,151 @@
+# List of USB disks to be mounted
+usb_disks:
+  - name: ssd
+    uuid: "<UUID of your storage device>"
+    size: 2000Gi
+    storageClass: local-ssd
+  - name: red
+    uuid: "<UUID of your storage device>"
+    size: 8000Gi
+    storageClass: local-red
+  - name: wd
+    uuid: "<UUID of your storage device>"
+    size: 2000Gi
+    storageClass: local-wd
+    fstype: ntfs
+
+# Mapping apps to volumes
+app_storage_map:
+  plex:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+      - name: local-wd
+        persistentVolumeClaim:
+          claimName: wd-pvc
+      - name: local-red
+        persistentVolumeClaim:
+          claimName: red-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/plex
+      - name: local-ssd
+        mountPath: /data
+        subPath: data/media
+      - name: local-wd
+        mountPath: /data/wd
+        subPath: data/wd/media
+      - name: local-red
+        mountPath: /data/red
+        subPath: data/red/media
+  radarr:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+      - name: local-wd
+        persistentVolumeClaim:
+          claimName: wd-pvc
+      - name: local-red
+        persistentVolumeClaim:
+          claimName: red-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/radarr
+      - name: local-ssd
+        mountPath: /data
+        subPath: data
+      - name: local-wd
+        mountPath: /data/wd
+        subPath: data/wd
+      - name: local-red
+        mountPath: /data/red
+        subPath: data/red
+  sonarr:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+      - name: local-wd
+        persistentVolumeClaim:
+          claimName: wd-pvc
+      - name: local-red
+        persistentVolumeClaim:
+          claimName: red-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/sonarr
+      - name: local-ssd
+        mountPath: /data
+        subPath: data
+      - name: local-wd
+        mountPath: /data/wd
+        subPath: data/wd
+      - name: local-red
+        mountPath: /data/red
+        subPath: data/red
+  jackett:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/jackett
+  qbittorrent:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+      - name: local-wd
+        persistentVolumeClaim:
+          claimName: wd-pvc
+      - name: local-red
+        persistentVolumeClaim:
+          claimName: red-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /config
+        subPath: config/qbittorrent
+      - name: local-ssd
+        mountPath: /data/torrents
+        subPath: data/torrents
+      - name: local-wd
+        mountPath: /data/wd/torrents
+        subPath: data/wd/torrents
+      - name: local-red
+        mountPath: /data/red/torrents
+        subPath: data/red/torrents
+  filebrowser:
+    extraVolumes:
+      - name: local-ssd
+        persistentVolumeClaim:
+          claimName: ssd-pvc
+      - name: local-wd
+        persistentVolumeClaim:
+          claimName: wd-pvc
+      - name: local-red
+        persistentVolumeClaim:
+          claimName: red-pvc
+    extraVolumeMounts:
+      - name: local-ssd
+        mountPath: /srv/ssd
+      - name: local-wd
+        mountPath: /srv/wd
+      - name: local-red
+        mountPath: /srv/red
+      - name: local-ssd
+        mountPath: /database/filebrowser.db
+        subPath: filebrowser/filebrowser.db
+      - name: local-ssd
+        mountPath: /config/settings.json
+        subPath: filebrowser/settings.json
+      
+# Node and repo info
+k8s_node_name: "{{ inventory_hostname }}"
+repo_root: "{{ playbook_dir }}/../.."

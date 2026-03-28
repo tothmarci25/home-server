@@ -28,6 +28,15 @@
   loop_control:
     index_var: disk_idx
 
+- name: Ensure vault data directories exist
+  file:
+    path: "/mnt/{{ vault_disk_name }}/{{ item }}"
+    state: directory
+  loop:
+    - vault-data
+    - vault-audit
+  when: vault_disk_name | default('') | length > 0
+
 - name: Label node (disk present)
   command: >
     kubectl label node {{ k8s_node_name }}

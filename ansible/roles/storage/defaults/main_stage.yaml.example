@@ -78,6 +78,9 @@ app_storage_map:
       - name: local-ssd
         mountPath: /config/settings.json
         subPath: filebrowser/settings.json
+
+# Vault PV configuration
+vault_disk_name: "ssd"   # disk from usb_disks used for vault storage paths
       
 # Node and repo info
 k8s_node_name: "{{ inventory_hostname }}"

@@ -66,6 +66,9 @@
     mode: '0644'
   notify: restart containerd
 
+- name: Flush handlers to restart containerd immediately with new config
+  meta: flush_handlers
+
 - name: Enable containerd service
   systemd:
     name: containerd
@@ -79,7 +82,7 @@
 
 - name: Download crictl
   ansible.builtin.get_url:
-    url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-amd64.tar.gz"
+    url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-arm64.tar.gz"
     dest: /tmp/crictl.tar.gz
     mode: '0644'
 

@@ -55,6 +55,11 @@
     port: 6443
     proto: tcp
 
+- name: Allow SSH port
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
 #- name: Wait for node to be registered
 # kubernetes.core.k8s_info:
 #  kind: Node

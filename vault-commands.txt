@@ -9,10 +9,23 @@ vault token create -ttl=15m (temporary token)
 kubectl -n vault create secret generic vault-bootstrap-token \
   --from-literal=token=s.xxxxx
 
+vault secrets enable -version=2 kv
+
 vault kv put kv/cloudflared \
   credentials.json=@credentials.json \
   tunnel-id="123"
 
 vault kv get kv/cloudflared (kv/data/cloudflared in CSI StorageProviderClass and policy)
+
+Argocd
+
+kubectl port-forward svc/argocd-server -n argocd 8080:80
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+argocd login localhost:8080 --insecure
+argocd app sync vault-bootstrap 
+
+SSH Port forward to open ArgoCD UI locally
+ssh -i $ANSIBLE_SSH_KEY -N -L 8080:localhost:8080 $SERVER_USER@$SERVER_IP
+
 
 

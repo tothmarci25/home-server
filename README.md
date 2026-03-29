@@ -106,18 +106,19 @@ vault operator init          # Save the unseal keys and root token
 vault operator unseal        # Run 3 times with 3 different unseal keys
 vault login <root-token>
 
+# Store CloudFlared secrets before syncing the bootstrap job
+vault secrets enable -version=2 kv
+vault kv put kv/cloudflared \
+  credentials.json=@credentials.json \
+  tunnel-id="your-tunnel-id"
+
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m
 kubectl -n vault create secret generic vault-bootstrap-token \
   --from-literal=token=<token>
-```
 
-Store CloudFlared secrets:
-
-```bash
-vault kv put kv/cloudflared \
-  credentials.json=@credentials.json \
-  tunnel-id="your-tunnel-id"
+# Manually sync the vault-bootstrap job in ArgoCD
+argocd app sync vault-bootstrap
 ```
 
 ### 6. (Optional) Setup WireGuard VPN

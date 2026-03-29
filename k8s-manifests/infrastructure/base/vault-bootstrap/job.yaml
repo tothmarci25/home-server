@@ -12,6 +12,7 @@ spec:
     spec:
       restartPolicy: OnFailure
 
+      serviceAccountName: vault
       containers:
         - name: bootstrap
           image: hashicorp/vault:1.15.6

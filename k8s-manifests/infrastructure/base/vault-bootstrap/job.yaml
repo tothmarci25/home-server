@@ -49,6 +49,7 @@ spec:
                 bound_service_account_names=cloudflared \
                 bound_service_account_namespaces=cloudflared \
                 policies=cloudflared \
+                audience=vault \
                 ttl=24h
 
               echo "Vault bootstrap completed successfully."

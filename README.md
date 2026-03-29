@@ -116,12 +116,23 @@ vault kv put kv/cloudflared \
 vault token create -ttl=15m
 kubectl -n vault create secret generic vault-bootstrap-token \
   --from-literal=token=<token>
+```
 
-# Manually sync the vault-bootstrap job in ArgoCD
+### 6. Sync vault-bootstrap and cloudflared
+
+Manually sync the vault-bootstrap job via the ArgoCD CLI or UI:
+
+```bash
 argocd app sync vault-bootstrap
 ```
 
-### 6. (Optional) Setup WireGuard VPN
+Once the job completes, sync the cloudflared application:
+
+```bash
+argocd app sync cloudflared
+```
+
+### 7. (Optional) Setup WireGuard VPN
 
 ```bash
 ./run_playbook.sh staging ansible/playbooks/setup_wireguard.yaml

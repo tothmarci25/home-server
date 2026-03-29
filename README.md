@@ -83,7 +83,32 @@ vault_disk_name: "ssd"
 
 This mounts USB disks by UUID, creates local PersistentVolumes, labels the node with storage availability, and generates the Helm values files consumed by ArgoCD. If `vault_disk_name` is set, it also creates the `vault-data` and `vault-audit` directories on the disk and generates `vault-pv-values.yaml`.
 
-### 4. Bootstrap ArgoCD
+### 4. Configure IP address pool
+
+MetalLB assigns IP addresses to services exposed outside the cluster. Edit the values file for your environment to set the IP range:
+
+- `k8s-manifests/infrastructure/values/staging/metallb-config-values.yaml`
+- `k8s-manifests/infrastructure/values/production/metallb-config-values.yaml`
+
+Set the `addresses` field to a range or individual IP on your local network that MetalLB can allocate from (must not overlap with your DHCP range):
+
+```yaml
+ipAddressPool:
+  addresses:
+    - 192.168.1.200-192.168.1.220  # range
+    - 192.168.1.100/32             # single address
+```
+
+The IP assigned to the nginx-ingress controller will be the entry point for all in-cluster apps. Local hostnames for those apps can be configured by setting `nginxIngressIP` in the DNSMasq values file for your environment:
+
+- `k8s-manifests/infrastructure/values/staging/dnsmasq-values.yaml`
+- `k8s-manifests/infrastructure/values/production/dnsmasq-values.yaml`
+
+```yaml
+nginxIngressIP: "192.168.1.100"
+```
+
+### 5. Bootstrap ArgoCD
 
 ```bash
 ./run_playbook.sh staging ansible/playbooks/bootstrap_argocd.yaml
@@ -93,7 +118,7 @@ This installs Helm, deploys ArgoCD via Helm chart (v9.3.7), and applies the root
 
 The initial ArgoCD admin password is printed at the end of the playbook output.
 
-### 5. Initialize Vault (first time only)
+### 6. Initialize Vault (first time only)
 
 After Vault is deployed by ArgoCD, exec into the Vault pod to run init commands:
 
@@ -118,7 +143,7 @@ kubectl -n vault create secret generic vault-bootstrap-token \
   --from-literal=token=<token>
 ```
 
-### 6. Sync vault-bootstrap and cloudflared
+### 7. Sync vault-bootstrap and cloudflared
 
 Manually sync the vault-bootstrap job via the ArgoCD CLI or UI:
 
@@ -132,7 +157,7 @@ Once the job completes, sync the cloudflared application:
 argocd app sync cloudflared
 ```
 
-### 7. (Optional) Setup WireGuard VPN
+### 8. (Optional) Setup WireGuard VPN
 
 ```bash
 ./run_playbook.sh staging ansible/playbooks/setup_wireguard.yaml

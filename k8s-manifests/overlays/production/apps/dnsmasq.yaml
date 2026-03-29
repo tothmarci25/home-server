@@ -9,8 +9,11 @@ spec:
   project: default
   source:
     repoURL: https://github.com/tothmarci25/home-server
-    path: k8s-manifests/infrastructure/charts/dnsmasq
     targetRevision: HEAD
+    path: k8s-manifests/infrastructure/charts/dnsmasq
+    helm:
+      valueFiles:
+        - ../../values/production/dnsmasq-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: default

@@ -23,10 +23,10 @@ data:
     cache-size=1000
 
     # Assign custom local hostnames
-    address=/qbittorrent.home/192.168.0.4
-    address=/sonarr.home/192.168.0.4
-    address=/radarr.home/192.168.0.4
-    address=/jackett.home/192.168.0.4
-    address=/filebrowser.home/192.168.0.4
-    address=/plex.home/192.168.0.4
-    address=/argocd.home/192.168.0.4
+    address=/qbittorrent.home/{{ .Values.nginxIngressIP }}
+    address=/sonarr.home/{{ .Values.nginxIngressIP }}
+    address=/radarr.home/{{ .Values.nginxIngressIP }}
+    address=/jackett.home/{{ .Values.nginxIngressIP }}
+    address=/filebrowser.home/{{ .Values.nginxIngressIP }}
+    address=/plex.home/{{ .Values.nginxIngressIP }}
+    address=/argocd.home/{{ .Values.nginxIngressIP }}

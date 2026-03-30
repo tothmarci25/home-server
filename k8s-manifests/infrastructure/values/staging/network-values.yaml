@@ -1,1 +1,4 @@
 nginxIngressIP: "192.168.0.14"
+plexIP: "192.168.0.16"
+qbittorrentIP: "192.168.0.15"
+dnsmasqIP: "192.168.0.18"

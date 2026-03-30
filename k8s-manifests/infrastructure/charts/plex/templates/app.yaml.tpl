@@ -30,7 +30,7 @@ spec:
             - name: TZ
               value: "Etc/UTC"
             - name: ADVERTISE_IP
-              value: "https://plex.tothmarci25.com,http://192.168.0.6:32400"
+              value: "https://plex.tothmarci25.com,http://{{ .Values.plexIP }}:32400"
           volumeMounts:
             {{- toYaml ($app.extraVolumeMounts | default list) | nindent 12 }}
       volumes:

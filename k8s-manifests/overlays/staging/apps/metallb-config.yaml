@@ -13,7 +13,7 @@ spec:
     path: k8s-manifests/infrastructure/charts/metallb-config
     helm:
       valueFiles:
-        - ../../values/staging/metallb-config-values.yaml
+        - ../../values/staging/network-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system

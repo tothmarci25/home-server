@@ -83,30 +83,23 @@ vault_disk_name: "ssd"
 
 This mounts USB disks by UUID, creates local PersistentVolumes, labels the node with storage availability, and generates the Helm values files consumed by ArgoCD. If `vault_disk_name` is set, it also creates the `vault-data` and `vault-audit` directories on the disk and generates `vault-pv-values.yaml`.
 
-### 4. Configure IP address pool
+### 4. Configure IP addresses
 
-MetalLB assigns IP addresses to services exposed outside the cluster. Edit the values file for your environment to set the IP range:
-
-- `k8s-manifests/infrastructure/values/staging/metallb-config-values.yaml`
-- `k8s-manifests/infrastructure/values/production/metallb-config-values.yaml`
-
-Set the `addresses` field to a range or individual IP on your local network that MetalLB can allocate from (must not overlap with your DHCP range):
-
-```yaml
-ipAddressPool:
-  addresses:
-    - 192.168.1.200-192.168.1.220  # range
-    - 192.168.1.100/32             # single address
-```
-
-The IP assigned to the nginx-ingress controller will be the entry point for all in-cluster apps. Set `nginxIngressIP` in the shared network values file for your environment — both DNSMasq (local DNS) and CloudFlared (tunnel routing) read from this single file:
+All service IPs are configured in a single network values file per environment:
 
 - `k8s-manifests/infrastructure/values/staging/network-values.yaml`
 - `k8s-manifests/infrastructure/values/production/network-values.yaml`
 
+Set each IP to an address on your local network that does not overlap with your DHCP range:
+
 ```yaml
-nginxIngressIP: "192.168.1.100"
+nginxIngressIP: "192.168.1.100"  # nginx-ingress entry point; used by DNSMasq and CloudFlared
+plexIP: "192.168.1.101"          # Plex direct-access IP
+qbittorrentIP: "192.168.1.102"   # qBittorrent direct-access IP
+dnsmasqIP: "192.168.1.103"       # DNSMasq IP
 ```
+
+MetalLB creates a dedicated IP pool for each service (`ingress-pool`, `plex-pool`, `qbittorrent-pool`, `dnsmasq-pool`) from these values.
 
 ### 5. Bootstrap ArgoCD
 

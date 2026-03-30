@@ -13,6 +13,7 @@ spec:
     path: k8s-manifests/infrastructure/charts/cloudflared
     helm:
       valueFiles:
+        - ../../values/staging/network-values.yaml
         - ../../values/staging/cloudflared-values.yaml
   destination:
     server: https://kubernetes.default.svc

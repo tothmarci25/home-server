@@ -1,1 +1,1 @@
-nginxIngressIP: "192.168.0.4"
+# nginxIngressIP moved to network-values.yaml

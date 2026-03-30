@@ -99,10 +99,10 @@ ipAddressPool:
     - 192.168.1.100/32             # single address
 ```
 
-The IP assigned to the nginx-ingress controller will be the entry point for all in-cluster apps. Local hostnames for those apps can be configured by setting `nginxIngressIP` in the DNSMasq values file for your environment:
+The IP assigned to the nginx-ingress controller will be the entry point for all in-cluster apps. Set `nginxIngressIP` in the shared network values file for your environment — both DNSMasq (local DNS) and CloudFlared (tunnel routing) read from this single file:
 
-- `k8s-manifests/infrastructure/values/staging/dnsmasq-values.yaml`
-- `k8s-manifests/infrastructure/values/production/dnsmasq-values.yaml`
+- `k8s-manifests/infrastructure/values/staging/network-values.yaml`
+- `k8s-manifests/infrastructure/values/production/network-values.yaml`
 
 ```yaml
 nginxIngressIP: "192.168.1.100"

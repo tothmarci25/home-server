@@ -14,7 +14,7 @@ data:
 {{- range .Values.tunnel.ingress }}
   {{- if .hostname }}
       - hostname: {{ .hostname }}
-        service: {{ .service }}
+        service: http://{{ $.Values.nginxIngressIP }}:80
   {{- else }}
       - service: {{ .service }}
   {{- end }}

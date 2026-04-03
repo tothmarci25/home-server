@@ -10,3 +10,9 @@ data:
     path "kv/data/cloudflared" {
       capabilities = ["read"]
     }
+    path "sys/storage/raft/snapshot" {
+      capabilities = ["read"]
+    }
+    path "kv/data/vault/r2-snapshot-credentials" {
+      capabilities = ["read"]
+    }

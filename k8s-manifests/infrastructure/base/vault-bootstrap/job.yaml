@@ -53,6 +53,18 @@ spec:
                 audience=vault \
                 ttl=24h
 
+
+              echo "Writing vault-snapshot policy..."
+              vault policy write vault-snapshot /policies/vault-snapshot.hcl
+
+              echo "Creating vault-snapshot role..."
+              vault write auth/kubernetes/role/vault-snapshot \
+                bound_service_account_names=vault-snapshot \
+                bound_service_account_namespaces=vault \
+                policies=vault-snapshot \
+                audience=vault \
+                ttl=1h
+
               echo "Vault bootstrap completed successfully."
 
           env:

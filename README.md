@@ -113,22 +113,29 @@ The initial ArgoCD admin password is printed at the end of the playbook output.
 
 ### 6. Initialize Vault (first time only)
 
-After Vault is deployed by ArgoCD, exec into the Vault pod to run init commands:
+After Vault is deployed by ArgoCD, port-forward Vault and run init commands from your local machine:
 
 ```bash
-kubectl exec -it -n vault statefulset/vault -- sh
+kubectl port-forward -n vault svc/vault 8200:8200
+export VAULT_ADDR=http://localhost:8200
 ```
 
 ```bash
-vault operator init          # Save the unseal keys and root token
+vault operator init          # Save the 5 unseal keys and root token securely
 vault operator unseal        # Run 3 times with 3 different unseal keys
 vault login <root-token>
 
-# Store CloudFlared secrets before syncing the bootstrap job
 vault secrets enable -version=2 kv
+
+# CloudFlared tunnel credentials
 vault kv put kv/cloudflared \
   credentials.json=@credentials.json \
   tunnel-id="your-tunnel-id"
+
+# Vault snapshot R2 credentials (for daily Raft snapshots to Cloudflare R2)
+vault kv put kv/vault/r2-snapshot-credentials \
+  access_key_id="<r2-access-key-id>" \
+  secret_access_key="<r2-secret-access-key>"
 
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m

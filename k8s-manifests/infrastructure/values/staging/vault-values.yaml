@@ -29,11 +29,16 @@ server:
         tls_disable = 1
       }
 
-      storage "file" {
-        path = "/vault/data"
+      storage "raft" {
+        path    = "/vault/data"
+        node_id = "vault-0"
       }
 
       disable_mlock = true
+
+snapshot:
+  r2Bucket: home-server-velero-backups-s
+  r2AccountId: 37535b085e86e334cd183fc92c0415ad
 
 ui:
   enabled: true

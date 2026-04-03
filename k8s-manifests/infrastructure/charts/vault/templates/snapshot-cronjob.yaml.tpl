@@ -53,19 +53,18 @@ spec:
                   AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secret_access_key kv/vault/r2-snapshot-credentials)
                   export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 
-                  TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-                  SNAPSHOT_FILE="/tmp/${TIMESTAMP}.snap"
+                  SNAPSHOT_FILE="/tmp/vault.snap"
 
                   echo "Taking Raft snapshot..."
                   vault operator raft snapshot save "$SNAPSHOT_FILE"
 
                   echo "Uploading snapshot to R2..."
                   aws s3 cp "$SNAPSHOT_FILE" \
-                    "s3://{{ .Values.snapshot.r2Bucket }}/vault-snapshots/${TIMESTAMP}.snap" \
+                    "s3://{{ .Values.snapshot.r2Bucket }}/vault-snapshots/vault.snap" \
                     --endpoint-url https://{{ .Values.snapshot.r2AccountId }}.r2.cloudflarestorage.com \
                     --region auto
 
-                  echo "Snapshot uploaded: vault-snapshots/${TIMESTAMP}.snap"
+                  echo "Snapshot uploaded: vault-snapshots/vault.snap"
               env:
                 - name: VAULT_ADDR
                   value: http://vault.vault.svc:8200

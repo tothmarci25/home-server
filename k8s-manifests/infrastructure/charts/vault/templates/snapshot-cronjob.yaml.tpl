@@ -18,9 +18,21 @@ spec:
         spec:
           restartPolicy: OnFailure
           serviceAccountName: vault-snapshot
+          volumes:
+            - name: vault-token
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      expirationSeconds: 7200
+                      audience: vault
           containers:
             - name: snapshot
               image: hashicorp/vault:1.15.6
+              volumeMounts:
+                - name: vault-token
+                  mountPath: /var/run/secrets/vault
+                  readOnly: true
               command:
                 - sh
                 - -c
@@ -30,7 +42,7 @@ spec:
                   apk add --no-cache aws-cli
 
                   echo "Authenticating to Vault via Kubernetes auth..."
-                  JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                  JWT=$(cat /var/run/secrets/vault/token)
                   VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login \
                     role=vault-snapshot \
                     jwt="$JWT")
@@ -50,7 +62,7 @@ spec:
                   echo "Uploading snapshot to R2..."
                   aws s3 cp "$SNAPSHOT_FILE" \
                     "s3://{{ .Values.snapshot.r2Bucket }}/vault-snapshots/${TIMESTAMP}.snap" \
-                    --endpoint-url https://37535b085e86e334cd183fc92c0415ad.r2.cloudflarestorage.com \
+                    --endpoint-url https://{{ .Values.snapshot.r2AccountId }}.r2.cloudflarestorage.com \
                     --region auto
 
                   echo "Snapshot uploaded: vault-snapshots/${TIMESTAMP}.snap"

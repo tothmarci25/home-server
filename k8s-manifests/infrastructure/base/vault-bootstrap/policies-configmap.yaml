@@ -10,6 +10,7 @@ data:
     path "kv/data/cloudflared" {
       capabilities = ["read"]
     }
+  vault-snapshot.hcl: |
     path "sys/storage/raft/snapshot" {
       capabilities = ["read"]
     }

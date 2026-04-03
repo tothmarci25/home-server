@@ -116,8 +116,7 @@ The initial ArgoCD admin password is printed at the end of the playbook output.
 After Vault is deployed by ArgoCD, port-forward Vault and run init commands from your local machine:
 
 ```bash
-kubectl port-forward -n vault svc/vault 8200:8200
-export VAULT_ADDR=http://localhost:8200
+kubectl exec -it -n vault statefulset/vault -- sh
 ```
 
 ```bash

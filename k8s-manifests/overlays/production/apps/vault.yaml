@@ -14,6 +14,7 @@ spec:
       helm:
         valueFiles:
           - ../../values/production/vault-pv-values.yaml
+          - $values/k8s-manifests/infrastructure/values/production/vault-values.yaml
     - repoURL: https://helm.releases.hashicorp.com
       chart: vault
       targetRevision: 0.31.0

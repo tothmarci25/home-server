@@ -1,0 +1,5 @@
+- name: Copy files to managed server
+  hosts: staging,production
+  become: yes
+  roles:
+    - copy_files

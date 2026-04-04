@@ -1,0 +1,6 @@
+# Each item:
+# - src: relative path on local machine (ansible controller)
+# - dest: absolute path on the remote host
+# - owner: (optional, default omitted → root)
+# - group: (optional, default omitted)
+# - mode: (optional, default omitted → "0644")

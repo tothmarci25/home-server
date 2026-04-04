@@ -1,0 +1,16 @@
+copy_files_list:
+  - src: local/file.conf
+    dest: /etc/app/file.conf
+    mode: "0600"
+
+  - src: scripts/startup.sh
+    dest: /usr/local/bin/startup.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+  - src: config/app.yaml
+    dest: /opt/app/config.yaml
+    owner: appuser
+    group: appuser
+    mode: "0644"

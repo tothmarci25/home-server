@@ -1,0 +1,9 @@
+- name: Copy files to remote host
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default(omit) }}"
+    group: "{{ item.group | default(omit) }}"
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ copy_files_list }}"
+  become: yes

@@ -111,9 +111,13 @@ This installs Helm, deploys ArgoCD via Helm chart (v9.3.7), and applies the root
 
 The initial ArgoCD admin password is printed at the end of the playbook output.
 
-### 6. Initialize Vault (first time only)
+### 6. Initialize Vault
 
-After Vault is deployed by ArgoCD, port-forward Vault and run init commands from your local machine:
+After Vault is deployed by ArgoCD, you have two paths:
+
+#### 6a. Fresh initialization (first time only)
+
+Run init commands from a shell inside the Vault pod:
 
 ```bash
 kubectl exec -it -n vault statefulset/vault -- sh
@@ -141,6 +145,73 @@ vault token create -ttl=15m
 kubectl -n vault create secret generic vault-bootstrap-token \
   --from-literal=token=<token>
 ```
+
+#### 6b. Restore from snapshot (reinstall)
+
+If you are reinstalling the cluster and have a Raft snapshot in Cloudflare R2, restore it instead of re-initializing from scratch. This recovers all secrets (including the CloudFlared credentials) without re-entering them manually.
+
+> **Note:** The snapshot is taken daily at 02:30 UTC by the `vault-snapshot` CronJob and stored as `vault-snapshots/vault.snap` in your R2 bucket (only the latest snapshot is kept).
+
+**1. Download the snapshot from R2 to your local machine:**
+
+```bash
+AWS_ACCESS_KEY_ID=<r2-access-key-id> AWS_SECRET_ACCESS_KEY=<r2-secret-access-key> \
+  aws s3 cp "s3://<r2-bucket>/vault-snapshots/vault.snap" ./vault.snap \
+  --endpoint-url https://<r2-account-id>.r2.cloudflarestorage.com \
+  --region auto
+```
+
+**2. Copy the snapshot to the server using the `copy_files` role:**
+
+Add an entry to `ansible/roles/copy_files/defaults/main.yaml`:
+
+```yaml
+copy_files_list:
+  - src: /path/to/local/vault.snap
+    dest: /tmp/
+    mode: "0600"
+```
+
+Then run the playbook:
+
+```bash
+./run_playbook.sh production ansible/playbooks/copy_files.yaml
+```
+
+**3. Copy the snapshot into the Vault pod and restore:**
+
+```bash
+kubectl cp /tmp/vault.snap vault/vault-0:/tmp/vault.snap
+```
+
+```bash
+kubectl exec -it -n vault statefulset/vault -- sh
+```
+
+```bash
+# Initialize Vault (required before restore; discard these keys after)
+vault operator init
+
+# Unseal with the throwaway keys just generated (needed to accept the restore)
+vault operator unseal   # run 3 times with 3 different keys from the init above
+
+# Log in with the throwaway root token
+vault login <throwaway-root-token>
+
+# Restore the snapshot — use -force because the throwaway init keys differ from the snapshot's keys
+vault operator raft snapshot restore -force /tmp/vault.snap
+```
+
+After the restore completes, Vault will be sealed again. Unseal using the **original unseal keys** from before the reinstall (the snapshot preserves the original encryption keys):
+
+```bash
+vault operator unseal   # run 3 times with 3 different original unseal keys
+vault login <original-root-token>
+```
+
+All secrets are now restored. Skip re-running the `kv put` commands below and proceed directly to creating the bootstrap token.
+
+---
 
 ### 7. Sync vault-bootstrap and cloudflared
 

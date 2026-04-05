@@ -30,3 +30,4 @@ data:
     address=/filebrowser.home/{{ .Values.nginxIngressIP }}
     address=/plex.home/{{ .Values.nginxIngressIP }}
     address=/argocd.home/{{ .Values.nginxIngressIP }}
+    address=/vault.home/{{ .Values.nginxIngressIP }}

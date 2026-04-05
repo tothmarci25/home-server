@@ -104,3 +104,13 @@ spec:
                  name: filebrowser-service
                  port:
                    number: 80
+    - host: vault.home
+      http:
+        paths:
+           - path: /
+             pathType: Prefix
+             backend:
+               service:
+                 name: vault-ui
+                 port:
+                   number: 8200

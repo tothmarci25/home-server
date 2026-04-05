@@ -53,6 +53,16 @@ spec:
                 audience=vault \
                 ttl=24h
 
+              echo "Writing velero policy..."
+              vault policy write velero /policies/velero.hcl
+
+              echo "Creating velero role..."
+              vault write auth/kubernetes/role/velero \
+                bound_service_account_names=velero \
+                bound_service_account_namespaces=velero \
+                policies=velero \
+                audience=vault \
+                ttl=24h
 
               echo "Writing vault-snapshot policy..."
               vault policy write vault-snapshot /policies/vault-snapshot.hcl

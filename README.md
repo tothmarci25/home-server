@@ -13,6 +13,7 @@ GitOps-based single-node Kubernetes cluster for self-hosted applications. Ansibl
 | qBittorrent   | Torrent client           |
 | FileBrowser   | Web-based file manager   |
 | Vault         | Secrets management       |
+| Velero        | Kubernetes backups       |
 | CloudFlared   | Cloudflare tunnel        |
 | DNSMasq       | Local DNS server         |
 | MetalLB       | Bare-metal load balancer |
@@ -140,6 +141,19 @@ vault kv put kv/vault/r2-snapshot-credentials \
   access_key_id="<r2-access-key-id>" \
   secret_access_key="<r2-secret-access-key>"
 
+# Velero backup R2 credentials (for nightly Kubernetes backups to Cloudflare R2)
+cat > /tmp/velero-cloud.txt << 'EOF'
+[default]
+type = s3
+provider = Cloudflare
+access_key_id = <r2-access-key-id>
+secret_access_key = <r2-secret-access-key>
+endpoint = https://<r2-account-id>.r2.cloudflarestorage.com
+acl = private
+EOF
+vault kv put kv/velero/r2-credentials cloud=@/tmp/velero-cloud.txt
+rm /tmp/velero-cloud.txt
+
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m
 kubectl -n vault create secret generic vault-bootstrap-token \
@@ -213,7 +227,7 @@ All secrets are now restored. Skip re-running the `kv put` commands below and pr
 
 ---
 
-### 7. Sync vault-bootstrap and cloudflared
+### 7. Sync vault-bootstrap and applications
 
 Manually sync the vault-bootstrap job via the ArgoCD CLI or UI:
 
@@ -221,10 +235,10 @@ Manually sync the vault-bootstrap job via the ArgoCD CLI or UI:
 argocd app sync vault-bootstrap
 ```
 
-Once the job completes, sync the cloudflared application:
+Once the job completes, sync the cloudflared and velero applications:
 
 ```bash
-argocd app sync cloudflared
+argocd app sync cloudflared velero
 ```
 
 ### 8. (Optional) Setup WireGuard VPN

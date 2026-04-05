@@ -13,9 +13,17 @@ spec:
     metadata:
       labels:
         app: radarr
+      annotations:
+        pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "kill -SIGSTOP 1"]'
+        pre.hook.backup.velero.io/container: radarr
+        pre.hook.backup.velero.io/timeout: "30s"
+        post.hook.backup.velero.io/command: '["/bin/sh", "-c", "kill -SIGCONT 1"]'
+        post.hook.backup.velero.io/container: radarr
+        post.hook.backup.velero.io/timeout: "30s"
+        backup.velero.io/backup-volumes: radarr-config
     spec:
       containers:
-        - name: sonarr
+        - name: radarr
           image: linuxserver/radarr:latest
           ports:
             - name: webui

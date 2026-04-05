@@ -10,6 +10,10 @@ data:
     path "kv/data/cloudflared" {
       capabilities = ["read"]
     }
+  velero.hcl: |
+    path "kv/data/velero/r2-credentials" {
+      capabilities = ["read"]
+    }
   vault-snapshot.hcl: |
     path "sys/storage/raft/snapshot" {
       capabilities = ["read"]

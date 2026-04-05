@@ -23,6 +23,17 @@ schedules:
       defaultVolumesToFsBackup: true
 nodeAgent:
   enabled: true
+extraVolumes:
+  - name: vault-secrets
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: velero-vault
+extraVolumeMounts:
+  - name: vault-secrets
+    mountPath: /etc/velero/vault-secrets
+    readOnly: true
 initContainers:
   - name: velero-plugin-for-aws
     image: velero/velero-plugin-for-aws:v1.10.0

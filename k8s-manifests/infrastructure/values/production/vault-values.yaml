@@ -40,9 +40,6 @@ server:
     ingressClassName: nginx
     hosts:
       - host: vault.home
-        paths:
-           - path: /
-             pathType: Prefix
 
 snapshot:
   r2Bucket: home-server-velero-backups

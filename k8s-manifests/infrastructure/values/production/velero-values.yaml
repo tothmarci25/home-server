@@ -4,6 +4,7 @@ configuration:
     - name: default
       provider: aws
       bucket: home-server-velero-backups
+      prefix: velero-backups
       credential:
         name: velero-r2-credentials
         key: cloud

@@ -58,7 +58,7 @@ spec:
 
               echo "Creating velero role..."
               vault write auth/kubernetes/role/velero \
-                bound_service_account_names=velero \
+                bound_service_account_names=velero-server \
                 bound_service_account_namespaces=velero \
                 policies=velero \
                 audience=vault \

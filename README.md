@@ -144,12 +144,8 @@ vault kv put kv/vault/r2-snapshot-credentials \
 # Velero backup R2 credentials (for nightly Kubernetes backups to Cloudflare R2)
 cat > /tmp/velero-cloud.txt << 'EOF'
 [default]
-type = s3
-provider = Cloudflare
-access_key_id = <r2-access-key-id>
-secret_access_key = <r2-secret-access-key>
-endpoint = https://<r2-account-id>.r2.cloudflarestorage.com
-acl = private
+aws_access_key_id = <YOUR_R2_ACCESS_KEY_ID>
+aws_secret_access_key = <YOUR_R2_SECRET_ACCESS_KEY>
 EOF
 vault kv put kv/velero/r2-credentials cloud=@/tmp/velero-cloud.txt
 rm /tmp/velero-cloud.txt

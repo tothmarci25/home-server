@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: plex
-      annotations:
-        backup.velero.io/backup-volumes: plex-config
     spec:
       containers:
         - name: plex

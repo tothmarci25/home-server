@@ -41,5 +41,11 @@ schedules:
     template:
       includedNamespaces:
         - default
+      includedResources:
+        - persistentvolumeclaims
+      labelSelector:
+        matchLabels:
+          velero.io/backup: "true"
       snapshotVolumes: true
+      snapshotMoveData: true
       storageLocation: default

@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: qbittorrent
-      annotations:
-        backup.velero.io/backup-volumes: qbittorrent-config
     spec:
       containers:
         - name: qbittorrent

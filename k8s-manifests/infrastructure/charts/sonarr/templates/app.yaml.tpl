@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: sonarr
-      annotations:
-        backup.velero.io/backup-volumes: sonarr-config
     spec:
       containers:
         - name: sonarr

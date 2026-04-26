@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: filebrowser
-      annotations:
-        backup.velero.io/backup-volumes: filebrowser-config
     spec:
       containers:
         - name: filebrowser

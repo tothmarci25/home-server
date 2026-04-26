@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: jackett
-      annotations:
-        backup.velero.io/backup-volumes: jackett-config
     spec:
       containers:
         - name: jackett

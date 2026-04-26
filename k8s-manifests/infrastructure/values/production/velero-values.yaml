@@ -1,5 +1,8 @@
 configuration:
-  volumeSnapshotLocation: []
+  features: EnableCSI
+  volumeSnapshotLocation:
+    - name: default
+      provider: csi
   backupStorageLocation:
     - name: default
       provider: aws
@@ -14,14 +17,6 @@ configuration:
         s3ForcePathStyle: "true"
 credentials:
   useSecret: false
-schedules:
-  nightly-config-backup:
-    schedule: "0 2 * * *"
-    template:
-      includedNamespaces:
-        - default
-      snapshotVolumes: false
-      defaultVolumesToFsBackup: true
 nodeAgent:
   enabled: true
 extraVolumes:
@@ -41,3 +36,11 @@ initContainers:
     volumeMounts:
       - mountPath: /target
         name: plugins
+schedules:
+  nightly-config-backup:
+    schedule: "0 2 * * *"
+    template:
+      includedNamespaces:
+        - default
+      snapshotVolumes: true
+      storageLocation: default

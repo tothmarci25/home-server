@@ -13,7 +13,8 @@ GitOps-based single-node Kubernetes cluster for self-hosted applications. Ansibl
 | qBittorrent   | Torrent client           |
 | FileBrowser   | Web-based file manager   |
 | Vault         | Secrets management       |
-| Velero        | Kubernetes backups       |
+| Longhorn      | Distributed block storage |
+| Velero        | Kubernetes backups (CSI snapshots) |
 | CloudFlared   | Cloudflare tunnel        |
 | DNSMasq       | Local DNS server         |
 | MetalLB       | Bare-metal load balancer |
@@ -65,15 +66,20 @@ This installs containerd, kubeadm, kubelet, kubectl (v1.35), initializes the clu
 Before running, edit `ansible/roles/storage/defaults/main.yaml` to match your setup:
 
 - `usb_disks` — disk name, UUID, size, and storage class for each attached USB disk. Find UUIDs on the server with `blkid` or `lsblk -f`.
-- `app_storage_map` — per-app volume and mount configuration referencing those disks.
+- `app_storage_map` — per-app volume and mount configuration. Config volumes reference the per-app Longhorn PVCs (e.g. `plex-config`); data volumes reference the raw local PVCs (e.g. `ssd-pvc`).
+- `longhorn_pvcs` — list of Longhorn-backed PVCs to create for app config volumes, with name and size.
 - `vault_disk_name` — name of the disk (from `usb_disks`) used for Vault storage. Leave empty to skip Vault directory and values generation.
 
 ```yaml
 usb_disks:
   - name: ssd
     uuid: "your-disk-uuid-here"
-    size: 16Gi
+    size: 2000Gi
     storageClass: local-ssd
+
+longhorn_pvcs:
+  - name: plex-config
+    size: 20Gi
 
 vault_disk_name: "ssd"
 ```
@@ -82,7 +88,7 @@ vault_disk_name: "ssd"
 ./run_playbook.sh staging ansible/playbooks/generate_storages.yaml
 ```
 
-This mounts USB disks by UUID, creates local PersistentVolumes, labels the node with storage availability, and generates the Helm values files consumed by ArgoCD. If `vault_disk_name` is set, it also creates the `vault-data` and `vault-audit` directories on the disk and generates `vault-pv-values.yaml`.
+This mounts USB disks by UUID, creates local PersistentVolumes, labels the node with storage availability, generates the Helm values files consumed by ArgoCD (including the Longhorn PVC definitions in `longhornPvcs`), and writes `generated-values.yaml`. If `vault_disk_name` is set, it also creates the `vault-data` and `vault-audit` directories on the disk and generates `vault-pv-values.yaml`.
 
 ### 4. Configure IP addresses
 
@@ -231,11 +237,13 @@ Manually sync the vault-bootstrap job via the ArgoCD CLI or UI:
 argocd app sync vault-bootstrap
 ```
 
-Once the job completes, sync the cloudflared and velero applications:
+Once the job completes, sync the cloudflared, longhorn, and velero applications:
 
 ```bash
-argocd app sync cloudflared velero
+argocd app sync cloudflared longhorn velero
 ```
+
+> **Note:** Longhorn must be running before Velero, as Velero uses the Longhorn CSI driver for volume snapshots. The sync waves enforce this order automatically (Longhorn: wave 1, Velero: wave 2), but if syncing manually ensure Longhorn pods are healthy first.
 
 ### 8. (Optional) Setup WireGuard VPN
 

@@ -14,6 +14,10 @@
   set_fact:
     generated_apps: "{{ app_storage_map }}"
 
+- name: Set longhorn PVC values
+  set_fact:
+    generated_longhorn_pvcs: "{{ longhorn_pvcs | default([]) }}"
+
 - name: Render aggregated Helm values
   template:
     src: values.generated.yaml.j2

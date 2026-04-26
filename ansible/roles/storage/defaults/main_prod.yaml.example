@@ -18,6 +18,9 @@ usb_disks:
 app_storage_map:
   plex:
     extraVolumes:
+      - name: plex-config
+        persistentVolumeClaim:
+          claimName: plex-config
       - name: local-ssd
         persistentVolumeClaim:
           claimName: ssd-pvc
@@ -28,9 +31,8 @@ app_storage_map:
         persistentVolumeClaim:
           claimName: red-pvc
     extraVolumeMounts:
-      - name: local-ssd
+      - name: plex-config
         mountPath: /config
-        subPath: config/plex
       - name: local-ssd
         mountPath: /data
         subPath: data/media
@@ -42,6 +44,9 @@ app_storage_map:
         subPath: data/red/media
   radarr:
     extraVolumes:
+      - name: radarr-config
+        persistentVolumeClaim:
+          claimName: radarr-config
       - name: local-ssd
         persistentVolumeClaim:
           claimName: ssd-pvc
@@ -52,9 +57,8 @@ app_storage_map:
         persistentVolumeClaim:
           claimName: red-pvc
     extraVolumeMounts:
-      - name: local-ssd
+      - name: radarr-config
         mountPath: /config
-        subPath: config/radarr
       - name: local-ssd
         mountPath: /data
         subPath: data
@@ -66,6 +70,9 @@ app_storage_map:
         subPath: data/red
   sonarr:
     extraVolumes:
+      - name: sonarr-config
+        persistentVolumeClaim:
+          claimName: sonarr-config
       - name: local-ssd
         persistentVolumeClaim:
           claimName: ssd-pvc
@@ -76,9 +83,8 @@ app_storage_map:
         persistentVolumeClaim:
           claimName: red-pvc
     extraVolumeMounts:
-      - name: local-ssd
+      - name: sonarr-config
         mountPath: /config
-        subPath: config/sonarr
       - name: local-ssd
         mountPath: /data
         subPath: data
@@ -90,15 +96,17 @@ app_storage_map:
         subPath: data/red
   jackett:
     extraVolumes:
-      - name: local-ssd
+      - name: jackett-config
         persistentVolumeClaim:
-          claimName: ssd-pvc
+          claimName: jackett-config
     extraVolumeMounts:
-      - name: local-ssd
+      - name: jackett-config
         mountPath: /config
-        subPath: config/jackett
   qbittorrent:
     extraVolumes:
+      - name: qbittorrent-config
+        persistentVolumeClaim:
+          claimName: qbittorrent-config
       - name: local-ssd
         persistentVolumeClaim:
           claimName: ssd-pvc
@@ -109,9 +117,8 @@ app_storage_map:
         persistentVolumeClaim:
           claimName: red-pvc
     extraVolumeMounts:
-      - name: local-ssd
+      - name: qbittorrent-config
         mountPath: /config
-        subPath: config/qbittorrent
       - name: local-ssd
         mountPath: /data/torrents
         subPath: data/torrents
@@ -123,6 +130,9 @@ app_storage_map:
         subPath: data/red/torrents
   filebrowser:
     extraVolumes:
+      - name: filebrowser-config
+        persistentVolumeClaim:
+          claimName: filebrowser-config
       - name: local-ssd
         persistentVolumeClaim:
           claimName: ssd-pvc
@@ -133,22 +143,37 @@ app_storage_map:
         persistentVolumeClaim:
           claimName: red-pvc
     extraVolumeMounts:
+      - name: filebrowser-config
+        mountPath: /database/filebrowser.db
+        subPath: filebrowser.db
+      - name: filebrowser-config
+        mountPath: /config/settings.json
+        subPath: settings.json
       - name: local-ssd
         mountPath: /srv/ssd
       - name: local-wd
         mountPath: /srv/wd
       - name: local-red
         mountPath: /srv/red
-      - name: local-ssd
-        mountPath: /database/filebrowser.db
-        subPath: filebrowser/filebrowser.db
-      - name: local-ssd
-        mountPath: /config/settings.json
-        subPath: filebrowser/settings.json
+
+# Longhorn PVCs for app config volumes
+longhorn_pvcs:
+  - name: plex-config
+    size: 20Gi
+  - name: radarr-config
+    size: 5Gi
+  - name: sonarr-config
+    size: 5Gi
+  - name: jackett-config
+    size: 2Gi
+  - name: qbittorrent-config
+    size: 2Gi
+  - name: filebrowser-config
+    size: 1Gi
 
 # Vault PV configuration
 vault_disk_name: "ssd"   # disk from usb_disks used for vault storage paths
-      
+
 # Node and repo info
 k8s_node_name: "{{ inventory_hostname }}"
 repo_root: "{{ playbook_dir }}/../.."

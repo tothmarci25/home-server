@@ -27,5 +27,11 @@ argocd app sync vault-bootstrap
 SSH Port forward to open ArgoCD UI locally
 ssh -i $ANSIBLE_SSH_KEY -N -L 8080:localhost:8080 $SERVER_USER@$SERVER_IP
 
+Velero
+
+kubectl exec -it -n velero deploy/velero -- /velero backup create test-backup --include-namespaces default
+kubectl exec -it -n velero deploy/velero -- /velero backup describe test-backup
+kubectl exec -it -n velero deploy/velero -- /velero backup logs test-backup
+
 
 

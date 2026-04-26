@@ -17,8 +17,7 @@ configuration:
         s3ForcePathStyle: "true"
 credentials:
   useSecret: false
-nodeAgent:
-  enabled: true
+deployNodeAgent: true
 extraVolumes:
   - name: vault-secrets
     csi:

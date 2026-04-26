@@ -20,6 +20,10 @@ spec:
           defaultDataPath: /mnt/ssd/longhorn
         persistence:
           defaultClassReplicaCount: 1
+        ingress:
+          enabled: true
+          ingressClassName: nginx
+          host: longhorn.home
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

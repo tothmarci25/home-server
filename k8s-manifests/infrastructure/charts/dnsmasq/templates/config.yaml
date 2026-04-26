@@ -31,3 +31,4 @@ data:
     address=/plex.home/{{ .Values.nginxIngressIP }}
     address=/argocd.home/{{ .Values.nginxIngressIP }}
     address=/vault.home/{{ .Values.nginxIngressIP }}
+    address=/longhorn.home/{{ .Values.nginxIngressIP }}

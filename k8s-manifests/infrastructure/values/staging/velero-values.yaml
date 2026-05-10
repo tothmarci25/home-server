@@ -1,0 +1,51 @@
+configuration:
+  features: EnableCSI
+  volumeSnapshotLocation:
+    - name: default
+      provider: csi
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: home-server-velero-backups-s
+      prefix: velero-backups
+      credential:
+        name: velero-r2-credentials
+        key: cloud
+      config:
+        region: auto
+        s3Url: https://37535b085e86e334cd183fc92c0415ad.r2.cloudflarestorage.com
+        s3ForcePathStyle: "true"
+credentials:
+  useSecret: false
+deployNodeAgent: true
+extraVolumes:
+  - name: vault-secrets
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: velero-vault
+extraVolumeMounts:
+  - name: vault-secrets
+    mountPath: /etc/velero/vault-secrets
+    readOnly: true
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.10.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+schedules:
+  nightly-config-backup:
+    schedule: "0 2 * * *"
+    template:
+      includedNamespaces:
+        - default
+      includedResources:
+        - persistentvolumeclaims
+      labelSelector:
+        matchLabels:
+          velero.io/backup: "true"
+      snapshotVolumes: true
+      snapshotMoveData: true
+      storageLocation: default

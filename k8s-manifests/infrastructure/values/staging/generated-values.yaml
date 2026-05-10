@@ -9,72 +9,95 @@ storages:
 apps:
   filebrowser:
     extraVolumeMounts:
+    - mountPath: /database/filebrowser.db
+      name: filebrowser-config
+      subPath: filebrowser.db
+    - mountPath: /config/settings.json
+      name: filebrowser-config
+      subPath: settings.json
     - mountPath: /srv/ssd
       name: local-ssd
-    - mountPath: /database/filebrowser.db
-      name: local-ssd
-      subPath: filebrowser/filebrowser.db
-    - mountPath: /config/settings.json
-      name: local-ssd
-      subPath: filebrowser/settings.json
     extraVolumes:
+    - name: filebrowser-config
+      persistentVolumeClaim:
+        claimName: filebrowser-config
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
   jackett:
     extraVolumeMounts:
     - mountPath: /config
-      name: local-ssd
-      subPath: config/jackett
+      name: jackett-config
     extraVolumes:
-    - name: local-ssd
+    - name: jackett-config
       persistentVolumeClaim:
-        claimName: ssd-pvc
+        claimName: jackett-config
   plex:
     extraVolumeMounts:
     - mountPath: /config
-      name: local-ssd
-      subPath: config/plex
+      name: plex-config
     - mountPath: /data
       name: local-ssd
       subPath: data/media
     extraVolumes:
+    - name: plex-config
+      persistentVolumeClaim:
+        claimName: plex-config
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
   qbittorrent:
     extraVolumeMounts:
     - mountPath: /config
-      name: local-ssd
-      subPath: config/qbittorrent
+      name: qbittorrent-config
     - mountPath: /data/torrents
       name: local-ssd
       subPath: data/torrents
     extraVolumes:
+    - name: qbittorrent-config
+      persistentVolumeClaim:
+        claimName: qbittorrent-config
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
   radarr:
     extraVolumeMounts:
     - mountPath: /config
-      name: local-ssd
-      subPath: config/radarr
+      name: radarr-config
     - mountPath: /data
       name: local-ssd
       subPath: data
     extraVolumes:
+    - name: radarr-config
+      persistentVolumeClaim:
+        claimName: radarr-config
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
   sonarr:
     extraVolumeMounts:
     - mountPath: /config
-      name: local-ssd
-      subPath: config/sonarr
+      name: sonarr-config
     - mountPath: /data
       name: local-ssd
       subPath: data
     extraVolumes:
+    - name: sonarr-config
+      persistentVolumeClaim:
+        claimName: sonarr-config
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
+longhornPvcs:
+- name: plex-config
+  size: 20Gi
+- name: radarr-config
+  size: 5Gi
+- name: sonarr-config
+  size: 5Gi
+- name: jackett-config
+  size: 2Gi
+- name: qbittorrent-config
+  size: 2Gi
+- name: filebrowser-config
+  size: 1Gi

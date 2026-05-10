@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: volume-snapshots
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/kubernetes-csi/external-snapshotter
+      path: client/config/crd
+      targetRevision: v8.2.0
+    - repoURL: https://github.com/kubernetes-csi/external-snapshotter
+      path: deploy/kubernetes/snapshot-controller
+      targetRevision: v8.2.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

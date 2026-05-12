@@ -2,9 +2,8 @@ storages:
 - name: ssd
   nodeLabel: usb.ssd
   path: /mnt/ssd
-  size: 16Gi
+  size: 40Gi
   storageClass: local-ssd
-
 
 apps:
   filebrowser:
@@ -88,9 +87,10 @@ apps:
     - name: local-ssd
       persistentVolumeClaim:
         claimName: ssd-pvc
+
 longhornPvcs:
 - name: plex-config
-  size: 20Gi
+  size: 5Gi
 - name: radarr-config
   size: 5Gi
 - name: sonarr-config

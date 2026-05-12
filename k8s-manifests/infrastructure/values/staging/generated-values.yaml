@@ -90,7 +90,7 @@ apps:
 
 longhornPvcs:
 - name: plex-config
-  size: 5Gi
+  size: 10Gi
 - name: radarr-config
   size: 5Gi
 - name: sonarr-config

@@ -18,6 +18,7 @@ spec:
         defaultSettings:
           defaultReplicaCount: 1
           defaultDataPath: /mnt/ssd/longhorn
+        defaultBackupStore:
           backupTarget: s3://home-server-velero-backups-s@auto/longhorn-backups
           backupTargetCredentialSecret: longhorn-backup-credentials
         persistence:

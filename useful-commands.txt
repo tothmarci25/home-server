@@ -24,12 +24,17 @@ kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.pas
 argocd login localhost:8080 --insecure
 argocd app sync vault-bootstrap 
 
-SSH Port forward to open ArgoCD UI locally
-ssh -i $ANSIBLE_SSH_KEY -N -L 8080:localhost:8080 $SERVER_USER@$SERVER_IP
+SSH Port forward to open ArgoCD UI locally using .env
+set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -N -L 8081:localhost:8080 $SERVER_USER@$SERVER_IP
 
 Velero
 
-kubectl exec -it -n velero deploy/velero -- /velero backup create test-backup --include-namespaces default
+kubectl exec -it -n velero deploy/velero -- /velero backup create test-backup \
+    --include-namespaces default \
+    --include-resources persistentvolumeclaims \
+    --selector velero.io/backup=true \
+    --snapshot-volumes=true \
+    --storage-location default
 kubectl exec -it -n velero deploy/velero -- /velero backup describe test-backup
 kubectl exec -it -n velero deploy/velero -- /velero backup logs test-backup
 

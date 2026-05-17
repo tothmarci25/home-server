@@ -157,9 +157,13 @@ vault kv put kv/velero/r2-credentials cloud=@/tmp/velero-cloud.txt
 rm /tmp/velero-cloud.txt
 
 # Longhorn backup R2 credentials (for volume backup data to Cloudflare R2)
-vault kv put kv/longhorn/backup-credentials \
-  AWS_ACCESS_KEY_ID="<YOUR_R2_ACCESS_KEY_ID>" \
-  AWS_SECRET_ACCESS_KEY="<YOUR_R2_SECRET_ACCESS_KEY>"
+# Longhorn does not support Vault/CSI integration for backup credentials (github.com/longhorn/longhorn/issues/2804)
+# This secret must be created manually before Longhorn can back up to R2
+kubectl create namespace longhorn-system || true
+kubectl create secret generic longhorn-backup-credentials \
+  -n longhorn-system \
+  --from-literal=AWS_ACCESS_KEY_ID="<YOUR_R2_ACCESS_KEY_ID>" \
+  --from-literal=AWS_SECRET_ACCESS_KEY="<YOUR_R2_SECRET_ACCESS_KEY>"
 
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m

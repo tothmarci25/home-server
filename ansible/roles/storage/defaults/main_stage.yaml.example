@@ -92,7 +92,7 @@ app_storage_map:
 # Longhorn PVCs for app config volumes
 longhorn_pvcs:
   - name: plex-config
-    size: 20Gi
+    size: 10Gi
   - name: radarr-config
     size: 5Gi
   - name: sonarr-config

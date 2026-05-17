@@ -75,6 +75,16 @@ spec:
                 audience=vault \
                 ttl=1h
 
+              echo "Creating longhorn-backup-credentials secret..."
+              ACCESS_KEY=$(vault kv get -field=AWS_ACCESS_KEY_ID kv/longhorn/backup-credentials)
+              SECRET_KEY=$(vault kv get -field=AWS_SECRET_ACCESS_KEY kv/longhorn/backup-credentials)
+              kubectl create namespace longhorn-system || true
+              kubectl create secret generic longhorn-backup-credentials \
+                -n longhorn-system \
+                --from-literal=AWS_ACCESS_KEY_ID="$ACCESS_KEY" \
+                --from-literal=AWS_SECRET_ACCESS_KEY="$SECRET_KEY" \
+                --dry-run=client -o yaml | kubectl apply -f -
+
               echo "Vault bootstrap completed successfully."
 
           env:

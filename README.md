@@ -156,6 +156,11 @@ EOF
 vault kv put kv/velero/r2-credentials cloud=@/tmp/velero-cloud.txt
 rm /tmp/velero-cloud.txt
 
+# Longhorn backup R2 credentials (for volume backup data to Cloudflare R2)
+vault kv put kv/longhorn/backup-credentials \
+  AWS_ACCESS_KEY_ID="<YOUR_R2_ACCESS_KEY_ID>" \
+  AWS_SECRET_ACCESS_KEY="<YOUR_R2_SECRET_ACCESS_KEY>"
+
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m
 kubectl -n vault create secret generic vault-bootstrap-token \
@@ -244,6 +249,8 @@ argocd app sync cloudflared longhorn velero
 ```
 
 > **Note:** Longhorn must be running before Velero, as Velero uses the Longhorn CSI driver for volume snapshots. The sync waves enforce this order automatically (Longhorn: wave 1, Velero: wave 2), but if syncing manually ensure Longhorn pods are healthy first.
+>
+> **Backup architecture:** Longhorn handles volume data backups natively to R2 (incremental, block-level). Velero orchestrates the backup schedule and stores PVC metadata. When Velero triggers a VolumeSnapshot, Longhorn's CSI driver creates a backup to R2 via the configured backup target. Restore is done through `velero restore` which recreates PVCs and triggers Longhorn to pull data back from R2.
 
 ### 8. (Optional) Setup WireGuard VPN
 

@@ -47,5 +47,4 @@ schedules:
         matchLabels:
           velero.io/backup: "true"
       snapshotVolumes: true
-      snapshotMoveData: true
       storageLocation: default

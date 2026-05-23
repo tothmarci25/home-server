@@ -14,6 +14,8 @@ spec:
       labels:
         app: filebrowser
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: filebrowser
           image: filebrowser/filebrowser:latest

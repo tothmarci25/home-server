@@ -52,7 +52,7 @@
   kubernetes.core.helm:
     name: argocd
     chart_ref: argo/argo-cd
-    chart_version: "9.3.7"
+    chart_version: "9.5.15"
     release_namespace: "{{ argocd_namespace }}"
     create_namespace: false
     kubeconfig: /etc/kubernetes/admin.conf

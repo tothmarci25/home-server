@@ -11,7 +11,7 @@ spec:
   sources:
     - repoURL: https://argoproj.github.io/argo-helm
       chart: argo-cd
-      targetRevision: 9.1.10   # pin version!
+      targetRevision: 9.5.15  # pin version!
       helm:
         valueFiles:
           - $values/k8s-manifests/infrastructure/values/common/argocd-values.yaml

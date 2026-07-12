@@ -2,7 +2,7 @@
 usb_disks:
   - name: ssd
     uuid: "<UUID of your storage device>"
-    size: 16Gi
+    size: 40Gi
     storageClass: local-ssd
 
 # Mapping apps to volumes

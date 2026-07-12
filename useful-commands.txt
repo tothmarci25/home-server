@@ -29,14 +29,16 @@ set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -
 
 Velero
 
-kubectl exec -it -n velero deploy/velero -- /velero backup create test-backup \
-    --include-namespaces default \
-    --include-resources persistentvolumeclaims \
-    --selector velero.io/backup=true \
-    --snapshot-volumes=true \
-    --storage-location default
-kubectl exec -it -n velero deploy/velero -- /velero backup describe test-backup
-kubectl exec -it -n velero deploy/velero -- /velero backup logs test-backup
+  Backup
+  kubectl exec -it -n velero deploy/velero -- /velero backup create test-run-2 --from-schedule velero-nightly-config-backup
+  kubectl exec -it -n velero deploy/velero -- /velero backup describe test-run-2
+  kubectl exec -it -n velero deploy/velero -- /velero backup logs test-run-2
 
+  Restore
+  kubectl exec -it -n velero deploy/velero -- /velero restore create --from-backup test-run-2
+
+Longhorn
+kubectl -n longhorn-system port-forward svc/longhorn-frontend 8082:80
+set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -N -L 8082:localhost:8082 $SERVER_USER@$SERVER_IP
 
 

@@ -163,7 +163,9 @@ kubectl create namespace longhorn-system || true
 kubectl create secret generic longhorn-backup-credentials \
   -n longhorn-system \
   --from-literal=AWS_ACCESS_KEY_ID="<YOUR_R2_ACCESS_KEY_ID>" \
-  --from-literal=AWS_SECRET_ACCESS_KEY="<YOUR_R2_SECRET_ACCESS_KEY>"
+  --from-literal=AWS_SECRET_ACCESS_KEY="<YOUR_R2_SECRET_ACCESS_KEY>" \
+  --from-literal=AWS_ENDPOINTS="https://<ACCOUNT_ID>.r2.cloudflarestorage.com" \
+  --from-literal=VIRTUAL_HOSTED_STYLE="false"
 
 # Create a short-lived bootstrap token for the vault-bootstrap job
 vault token create -ttl=15m

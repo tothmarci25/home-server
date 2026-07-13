@@ -18,6 +18,9 @@ spec:
         defaultSettings:
           defaultReplicaCount: 1
           defaultDataPath: /mnt/ssd/longhorn
+        defaultBackupStore:
+          backupTarget: "s3://home-server-velero-backups@auto/longhorn-backups?endpoint=37535b085e86e334cd183fc92c0415ad.r2.cloudflarestorage.com&disableSSL=false&s3ForcePathStyle=true"
+          backupTargetCredentialSecret: longhorn-backup-credentials
         persistence:
           defaultClassReplicaCount: 1
         ingress:
@@ -28,8 +31,5 @@ spec:
     server: https://kubernetes.default.svc
     namespace: longhorn-system
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true

@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: velero-backup-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: velero-backups
+      rules:
+        - alert: VeleroBackupStale
+          # No successful nightly backup in ~26h (nightly runs at 02:00).
+          expr: >-
+            time() - max(velero_backup_last_successful_timestamp{schedule="nightly-config-backup"}) > 93600
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Velero nightly backup is stale"
+            description: >-
+              No successful Velero backup from schedule 'nightly-config-backup'
+              in over 26 hours. Existing backups keep expiring (TTL 360h/15d) —
+              investigate before backups run out.
+
+        - alert: VeleroBackupFailures
+          expr: increase(velero_backup_failure_total[24h]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Velero backup failures in the last 24h"
+            description: "Velero recorded {{ $value }} backup failure(s) in the last 24 hours."
+
+        - alert: VeleroBackupPartialFailures
+          expr: increase(velero_backup_partial_failure_total[24h]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Velero partial backup failures in the last 24h"
+            description: "Velero recorded {{ $value }} partial backup failure(s) in the last 24 hours."
+
+        - alert: VeleroNoMetrics
+          # Velero is down or the scrape target is broken — the watchdog is blind.
+          expr: absent(velero_backup_last_successful_timestamp)
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "Velero metrics are absent"
+            description: >-
+              Prometheus cannot see any velero_backup_last_successful_timestamp
+              metric for over an hour. Velero or its ServiceMonitor scrape may be
+              down — backup alerting is not functioning.

@@ -75,6 +75,28 @@ spec:
                 audience=vault \
                 ttl=1h
 
+              echo "Writing alertmanager policy..."
+              vault policy write alertmanager /policies/alertmanager.hcl
+
+              echo "Creating alertmanager role..."
+              vault write auth/kubernetes/role/alertmanager \
+                bound_service_account_names=kube-prometheus-stack-alertmanager \
+                bound_service_account_namespaces=monitoring \
+                policies=alertmanager \
+                audience=vault \
+                ttl=24h
+
+              echo "Writing grafana policy..."
+              vault policy write grafana /policies/grafana.hcl
+
+              echo "Creating grafana role..."
+              vault write auth/kubernetes/role/grafana \
+                bound_service_account_names=kube-prometheus-stack-grafana \
+                bound_service_account_namespaces=monitoring \
+                policies=grafana \
+                audience=vault \
+                ttl=24h
+
               echo "Vault bootstrap completed successfully."
 
           env:

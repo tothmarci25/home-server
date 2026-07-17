@@ -15,6 +15,7 @@ GitOps-based single-node Kubernetes cluster for self-hosted applications. Ansibl
 | Vault         | Secrets management       |
 | Longhorn      | Distributed block storage |
 | Velero        | Kubernetes backups (CSI snapshots) |
+| kube-prometheus-stack | Monitoring & alerting (Prometheus + Alertmanager + Grafana) |
 | CloudFlared   | Cloudflare tunnel        |
 | DNSMasq       | Local DNS server         |
 | MetalLB       | Bare-metal load balancer |
@@ -156,6 +157,16 @@ EOF
 vault kv put kv/velero/r2-credentials cloud=@/tmp/velero-cloud.txt
 rm /tmp/velero-cloud.txt
 
+# Telegram bot credentials (for Alertmanager backup-failure alerts)
+# Only the bot token is stored in Vault; the numeric chat_id is set in the
+# kube-prometheus-stack values file (Alertmanager has no chat_id_file option).
+vault kv put kv/monitoring/telegram bot-token="<telegram-bot-token>"
+
+# Grafana admin credentials (both staging and production read these from Vault;
+# Grafana will not start until this secret exists). Also record in your password
+# manager (e.g. Bitwarden) for recall — Vault stays the source of truth.
+vault kv put kv/monitoring/grafana admin-user="admin" admin-password="<strong-password>"
+
 # Longhorn backup R2 credentials (for volume backup data to Cloudflare R2)
 # Longhorn does not support Vault/CSI integration for backup credentials (github.com/longhorn/longhorn/issues/2804)
 # This secret must be created manually before Longhorn can back up to R2
@@ -257,6 +268,80 @@ argocd app sync cloudflared longhorn velero
 > **Note:** Longhorn must be running before Velero, as Velero uses the Longhorn CSI driver for volume snapshots. The sync waves enforce this order automatically (Longhorn: wave 1, Velero: wave 2), but if syncing manually ensure Longhorn pods are healthy first.
 >
 > **Backup architecture:** Longhorn handles volume data backups natively to R2 (incremental, block-level). Velero orchestrates the backup schedule and stores PVC metadata. When Velero triggers a VolumeSnapshot, Longhorn's CSI driver creates a backup to R2 via the configured backup target. Restore is done through `velero restore` which recreates PVCs and triggers Longhorn to pull data back from R2.
+
+### 7a. Backup monitoring & alerting
+
+The `kube-prometheus-stack` application (sync wave 3) watches Velero's backup
+health and sends a **Telegram** message when a backup goes stale or fails. This
+is the safety net for Velero's backup TTL (`360h` / 15 days): the TTL reaper
+deletes old backups on schedule regardless of whether new backups still succeed,
+so a silent backup failure could leave you with zero backups after 15 days. The
+alert fires the next morning a backup stops instead.
+
+It is a deliberately lean install — Prometheus + Alertmanager + Grafana only.
+Node-exporter, kube-state-metrics, and the bundled Kubernetes alert rules are
+disabled; this is a backup watchdog, not full cluster monitoring.
+
+**Prerequisites (done during Vault init, step 6a):**
+
+1. Store the Telegram bot token in Vault:
+   `vault kv put kv/monitoring/telegram bot-token="<telegram-bot-token>"`
+2. Set your numeric `chat_id` in both values files (default is `0`):
+   - `k8s-manifests/infrastructure/values/staging/kube-prometheus-stack-values.yaml`
+   - `k8s-manifests/infrastructure/values/production/kube-prometheus-stack-values.yaml`
+3. Store the Grafana admin credentials in Vault (**required** — Grafana will not
+   start without it, in both environments):
+   `vault kv put kv/monitoring/grafana admin-user="admin" admin-password="<strong-password>"`
+
+Create a bot with [@BotFather](https://t.me/BotFather) to get the token, and get
+your chat ID by messaging the bot then reading
+`https://api.telegram.org/bot<token>/getUpdates`.
+
+**Sync the app:**
+
+```bash
+argocd app sync kube-prometheus-stack
+```
+
+**Alerts** (defined in `charts/kube-prometheus-stack/templates/prometheus-rules.yaml`):
+
+| Alert | Fires when | Severity |
+| ----- | ---------- | -------- |
+| `VeleroBackupStale` | No successful nightly backup in ~26h | critical |
+| `VeleroBackupFailures` | Any backup failure in the last 24h | warning |
+| `VeleroBackupPartialFailures` | Any partial backup failure in the last 24h | warning |
+| `VeleroNoMetrics` | Velero metrics absent for >1h (watchdog blind) | critical |
+
+**UIs** — three separate web interfaces, each exposed via nginx ingress on a
+`.home` host (resolved by DNSMasq):
+
+- **Grafana** (`grafana.home`) — dashboards and graphs. Queries Prometheus as a
+  datasource; it has no scrape-targets view.
+- **Prometheus** (`prometheus.home`) — **Status → Targets** shows scrape health,
+  and the **Alerts** tab lists the loaded rules.
+- **Alertmanager** (`alertmanager.home`) — currently firing/silenced alerts.
+
+To verify the pipeline, open the **Prometheus** UI's **Status → Targets** page
+and confirm the Velero ServiceMonitor is `UP`, then send a synthetic alert with
+`amtool` to confirm Telegram delivery.
+
+> **Grafana admin credentials** are sourced from Vault (`kv/monitoring/grafana`)
+> via Secrets Store CSI in **both** environments — there is no inline password.
+> The Grafana pod will not start until that secret exists (a stuck/pending pod
+> usually means the secret is missing or the `grafana` Vault role is misbound).
+> Vault is the single source of truth; keep a copy in Bitwarden for recall.
+>
+> **To rotate the password:** update Vault, then restart Grafana so it re-reads
+> the secret (the pod runs with `persistence.enabled: false`, so its DB is
+> ephemeral and re-seeds the admin user from the secret on boot):
+>
+> ```bash
+> vault kv put kv/monitoring/grafana admin-user="admin" admin-password="<new>"
+> kubectl -n monitoring rollout restart deploy/kube-prometheus-stack-grafana
+> ```
+>
+> Then update Bitwarden. Do **not** change the password via the Grafana UI — that
+> edits Grafana's DB and diverges from Vault.
 
 ### 8. (Optional) Setup WireGuard VPN
 

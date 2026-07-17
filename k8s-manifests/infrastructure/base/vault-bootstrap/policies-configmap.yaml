@@ -21,3 +21,11 @@ data:
     path "kv/data/vault/r2-snapshot-credentials" {
       capabilities = ["read"]
     }
+  alertmanager.hcl: |
+    path "kv/data/monitoring/telegram" {
+      capabilities = ["read"]
+    }
+  grafana.hcl: |
+    path "kv/data/monitoring/grafana" {
+      capabilities = ["read"]
+    }

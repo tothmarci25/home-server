@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/tothmarci25/home-server
+      path: k8s-manifests/infrastructure/charts/kube-prometheus-stack
+      targetRevision: HEAD
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 87.16.1
+      helm:
+        valueFiles:
+          - $values/k8s-manifests/infrastructure/values/staging/kube-prometheus-stack-values.yaml
+    - repoURL: https://github.com/tothmarci25/home-server
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

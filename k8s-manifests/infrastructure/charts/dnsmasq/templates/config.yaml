@@ -32,3 +32,6 @@ data:
     address=/argocd.home/{{ .Values.nginxIngressIP }}
     address=/vault.home/{{ .Values.nginxIngressIP }}
     address=/longhorn.home/{{ .Values.nginxIngressIP }}
+    address=/grafana.home/{{ .Values.nginxIngressIP }}
+    address=/prometheus.home/{{ .Values.nginxIngressIP }}
+    address=/alertmanager.home/{{ .Values.nginxIngressIP }}

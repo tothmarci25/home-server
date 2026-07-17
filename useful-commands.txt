@@ -42,3 +42,40 @@ kubectl -n longhorn-system port-forward svc/longhorn-frontend 8082:80
 set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -N -L 8082:localhost:8082 $SERVER_USER@$SERVER_IP
 
 
+Monitoring (kube-prometheus-stack: Prometheus + Alertmanager + Grafana)
+
+  One-time: store Telegram bot token in Vault (chat_id goes in the values file, it is low-sensitivity)
+  vault kv put kv/monitoring/telegram bot-token="123456:ABC-your-bot-token"
+  # then set chat_id in k8s-manifests/infrastructure/values/{staging,production}/kube-prometheus-stack-values.yaml
+
+  One-time: store Grafana admin credentials in Vault (both envs read these; Grafana won't start without it)
+  vault kv put kv/monitoring/grafana admin-user="admin" admin-password="<strong-password>"
+
+  Rotate the Grafana admin password (Vault is source of truth; also copy to Bitwarden):
+  vault kv put kv/monitoring/grafana admin-user="admin" admin-password="<new>"
+  kubectl -n monitoring rollout restart deploy/kube-prometheus-stack-grafana
+  # do NOT change the password via the Grafana UI (edits Grafana's DB, diverges from Vault)
+
+  Verify Vault role + secret materialized
+  vault read auth/kubernetes/role/alertmanager
+  kubectl -n monitoring get secretproviderclass alertmanager-vault
+  kubectl -n monitoring get secret alertmanager-telegram
+
+  Prometheus UI (Targets page shows the Velero ServiceMonitor UP; Alerts page lists VeleroBackup* rules)
+  kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
+
+  Grafana (ingress: grafana.home; default admin password "admin" for staging)
+  kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+
+  Alertmanager UI
+  kubectl -n monitoring port-forward svc/kube-prometheus-stack-alertmanager 9093:9093
+
+  Test-fire the backup alert (pick one):
+  # a) pause the Velero schedule so VeleroBackupStale fires after ~26h (slow), or
+  # b) temporarily lower the VeleroBackupStale threshold in
+  #    charts/kube-prometheus-stack/templates/prometheus-rules.yaml (e.g. > 60) and sync, or
+  # c) send a synthetic alert straight to Alertmanager via amtool:
+  amtool alert add VeleroBackupStale severity=critical --alertmanager.url=http://localhost:9093
+  # -> expect a Telegram message, and a "resolved" message when it clears.
+
+

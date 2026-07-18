@@ -88,4 +88,16 @@ apps:
       persistentVolumeClaim:
         claimName: ssd-pvc
 
-longhornPvcs: []
+longhornPvcs:
+- name: plex-config
+  size: 10Gi
+- name: radarr-config
+  size: 5Gi
+- name: sonarr-config
+  size: 5Gi
+- name: jackett-config
+  size: 2Gi
+- name: qbittorrent-config
+  size: 2Gi
+- name: filebrowser-config
+  size: 1Gi

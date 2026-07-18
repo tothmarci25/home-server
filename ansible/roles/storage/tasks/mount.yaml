@@ -19,7 +19,7 @@
   when: 
     - disk_checks.results[disk_idx].stat.exists
     - >
-      ansible_mounts
+      ansible_facts['mounts']
       | selectattr('uuid', 'equalto', item.uuid)
       | selectattr('mount', 'equalto', '/mnt/' ~ item.name)
       | list

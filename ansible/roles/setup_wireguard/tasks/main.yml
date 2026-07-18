@@ -45,7 +45,7 @@
 # Optional but very useful for visibility
 - name: Show detected public interface
   debug:
-    msg: "Detected outbound interface: {{ ansible_default_ipv4.interface }}"
+    msg: "Detected outbound interface: {{ ansible_facts['default_ipv4']['interface'] }}"
 
 - name: Create WireGuard server config
   copy:
@@ -58,10 +58,10 @@
       PrivateKey = {{ wg_private_key.stdout }}
 
       # Firewall rules applied when interface starts/stops
-      PostUp = ufw route allow in on {{ wg_interface }} out on {{ ansible_default_ipv4.interface }}
-      PostUp = iptables -t nat -I POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
-      PreDown = ufw route delete allow in on {{ wg_interface }} out on {{ ansible_default_ipv4.interface }}
-      PreDown = iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+      PostUp = ufw route allow in on {{ wg_interface }} out on {{ ansible_facts['default_ipv4']['interface'] }}
+      PostUp = iptables -t nat -I POSTROUTING -o {{ ansible_facts['default_ipv4']['interface'] }} -j MASQUERADE
+      PreDown = ufw route delete allow in on {{ wg_interface }} out on {{ ansible_facts['default_ipv4']['interface'] }}
+      PreDown = iptables -t nat -D POSTROUTING -o {{ ansible_facts['default_ipv4']['interface'] }} -j MASQUERADE
     owner: root
     group: root
     mode: '600'

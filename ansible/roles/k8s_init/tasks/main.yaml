@@ -26,7 +26,7 @@
 
 - name: Show HOME environment variable
   debug:
-    var: ansible_env.HOME
+    var: ansible_facts['env']['HOME']
 
 - name: Create kubeconfig directory for user
   file:
@@ -88,7 +88,7 @@
 - name: Get current node object
   kubernetes.core.k8s_info:
     kind: Node
-    name: "{{ ansible_hostname }}"
+    name: "{{ ansible_facts['hostname'] }}"
     kubeconfig: /etc/kubernetes/admin.conf
   register: k8s_node
 

@@ -29,7 +29,7 @@ spec:
             severity: warning
           annotations:
             summary: "Velero backup failures in the last 24h"
-            description: "Velero recorded {{ $value }} backup failure(s) in the last 24 hours."
+            description: "Velero recorded {{`{{ $value }}`}} backup failure(s) in the last 24 hours."
 
         - alert: VeleroBackupPartialFailures
           expr: increase(velero_backup_partial_failure_total[24h]) > 0
@@ -37,7 +37,7 @@ spec:
             severity: warning
           annotations:
             summary: "Velero partial backup failures in the last 24h"
-            description: "Velero recorded {{ $value }} partial backup failure(s) in the last 24 hours."
+            description: "Velero recorded {{`{{ $value }}`}} partial backup failure(s) in the last 24 hours."
 
         - alert: VeleroNoMetrics
           # Velero is down or the scrape target is broken — the watchdog is blind.

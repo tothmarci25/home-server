@@ -18,6 +18,10 @@ spec:
         defaultSettings:
           defaultReplicaCount: 1
           defaultDataPath: /mnt/ssd/longhorn
+          # Small single-node disk (~40Gi) with several thin-provisioned volumes.
+          # Relax the reservation guards so new volumes can still schedule.
+          storageMinimalAvailablePercentage: 10
+          storageOverProvisioningPercentage: 200
         defaultBackupStore:
           backupTarget: "s3://home-server-velero-backups-s@auto/longhorn-backups?endpoint=37535b085e86e334cd183fc92c0415ad.r2.cloudflarestorage.com&disableSSL=false&s3ForcePathStyle=true"
           backupTargetCredentialSecret: longhorn-backup-credentials

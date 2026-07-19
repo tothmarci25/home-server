@@ -11,6 +11,7 @@ set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -
 Velero
 
   Backup
+  kubectl exec -it -n velero deploy/velero -- /velero backup get
   kubectl exec -it -n velero deploy/velero -- /velero backup create test-run-2 --from-schedule velero-nightly-config-backup
   kubectl exec -it -n velero deploy/velero -- /velero backup describe test-run-2
   kubectl exec -it -n velero deploy/velero -- /velero backup logs test-run-2

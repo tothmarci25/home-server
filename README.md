@@ -213,13 +213,13 @@ copy_files_list:
 Then run the playbook:
 
 ```bash
-./run_playbook.sh production ansible/playbooks/copy_files.yaml
+./run_playbook.sh staging ansible/playbooks/copy_files.yaml
 ```
 
 **3. Copy the snapshot into the Vault pod and restore:**
 
 ```bash
-kubectl cp /tmp/vault.snap vault/vault-0:/tmp/vault.snap
+kubectl cp /tmp/vault.snap vault/vault-0:/tmp/
 ```
 
 ```bash

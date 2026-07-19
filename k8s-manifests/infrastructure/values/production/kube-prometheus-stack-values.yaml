@@ -1,0 +1,126 @@
+# Lean kube-prometheus-stack: Prometheus + Alertmanager + Grafana only.
+# Purpose: watchdog for Velero backup health -> Telegram alerts.
+# Node-exporter, kube-state-metrics and the default K8s rules are disabled.
+
+nodeExporter:
+  enabled: false
+kubeStateMetrics:
+  enabled: false
+kube-state-metrics:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false
+
+defaultRules:
+  create: false
+
+# Single-node cluster: skip control-plane component scraping (unreachable/noisy).
+kubernetesServiceMonitors:
+  enabled: true
+kubeApiServer:
+  enabled: false
+kubelet:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+coreDns:
+  enabled: false
+
+prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - prometheus.home
+  prometheusSpec:
+    retention: 7d
+    # Discover ServiceMonitors/PrometheusRules across namespaces regardless of
+    # helm-managed selector defaults (so the Velero ServiceMonitor is picked up).
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+grafana:
+  enabled: true
+  # Admin credentials sourced from Vault (kv/monitoring/grafana) via Secrets Store CSI.
+  # The extraSecretMounts CSI volume triggers the grafana-admin secret sync;
+  # admin.existingSecret then consumes it.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  extraSecretMounts:
+    - name: grafana-vault
+      mountPath: /etc/grafana/vault-secrets
+      readOnly: true
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: grafana-vault
+  persistence:
+    enabled: false
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.home
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - alertmanager.home
+  # Mount Telegram bot token from Vault via Secrets Store CSI (alertmanager-vault).
+  alertmanagerSpec:
+    volumes:
+      - name: telegram-secret
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: alertmanager-vault
+    volumeMounts:
+      - name: telegram-secret
+        mountPath: /etc/telegram
+        readOnly: true
+  config:
+    route:
+      receiver: telegram
+      group_by: ["alertname"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        # Prometheus' self-monitoring Watchdog alert always fires; drop it.
+        - receiver: "null"
+          matchers:
+            - alertname = "Watchdog"
+    receivers:
+      # Required by the Watchdog route above; the operator rejects the config
+      # if a route references a receiver that isn't defined.
+      - name: "null"
+      - name: telegram
+        telegram_configs:
+          - bot_token_file: /etc/telegram/bot-token
+            # chat_id is a low-sensitivity numeric ID; set your Telegram chat id here.
+            chat_id: 8972940694
+            parse_mode: HTML
+            send_resolved: true

@@ -18,6 +18,12 @@ configuration:
 credentials:
   useSecret: false
 deployNodeAgent: true
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack
 extraVolumes:
   - name: vault-secrets
     csi:
@@ -39,6 +45,7 @@ schedules:
   nightly-config-backup:
     schedule: "0 2 * * *"
     template:
+      ttl: 360h
       includedNamespaces:
         - default
       includedResources:

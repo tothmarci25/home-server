@@ -1,0 +1,23 @@
+# Run once to seed FileBrowser's config folder on a fresh volume.
+# FileBrowser crashes on init if filebrowser.db / settings.json don't exist,
+# so this pod creates the default database and settings.json before first start.
+# Apply manually (NOT via ArgoCD): kubectl apply -f filebrowser-init-config.yaml
+# Delete after the volume is seeded:  kubectl delete -f filebrowser-init-config.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+    name: filebrowser-init
+    namespace: default
+spec:
+    restartPolicy: Never
+    containers:
+      - name: init
+        image: busybox
+        command: ["sh", "-c", "rm -rf /data/filebrowser.db /data/settings.json && touch /data/filebrowser.db && echo '{\"port\": 8080, \"baseURL\": \"\", \"address\": \"\", \"log\": \"stdout\", \"database\": \"/database/filebrowser.db\", \"root\": \"/srv\"}' > /data/settings.json && echo done && sleep 36000"]
+        volumeMounts:
+          - name: config
+            mountPath: /data
+    volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: filebrowser-config

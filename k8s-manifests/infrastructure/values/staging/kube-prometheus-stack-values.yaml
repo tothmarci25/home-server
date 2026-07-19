@@ -68,10 +68,11 @@ grafana:
     - name: grafana-vault
       mountPath: /etc/grafana/vault-secrets
       readOnly: true
-      csi: true
-      csiDriver: secrets-store.csi.k8s.io
-      csiVolumeAttributes:
-        secretProviderClass: grafana-vault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: grafana-vault
   persistence:
     enabled: false
   ingress:

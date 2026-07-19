@@ -1,0 +1,23 @@
+# Temporary test rule to verify the Prometheus -> Alertmanager -> Telegram pipeline.
+# vector(1) is always true, so this fires within ~30-60s of being applied.
+# Apply manually (NOT via ArgoCD): kubectl apply -f test-alert-pipeline.yaml
+# Delete after testing:            kubectl delete -f test-alert-pipeline.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: test-alert-pipeline
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: test-pipeline
+      rules:
+        - alert: TestPipelineFiring
+          expr: vector(1)
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Test alert - pipeline check"
+            description: "If you see this in Telegram, Prometheus->Alertmanager->Telegram works."

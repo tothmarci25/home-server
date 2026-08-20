@@ -31,47 +31,32 @@ spec:
           args:
             - |
               set -x
-              # Enter the host's mount/uts/ipc/net/pid namespaces via PID 1 (host init),
-              # then recover sshd on the Ubuntu host itself.
-              # NOTE: sshd_config is intentionally NOT modified — we assume it still
-              # declares "Port 2222". We only (re)start the service and re-open UFW 2222.
+              # ROOT CAUSE: ssh is socket-activated (ssh.socket). Its ListenStream was
+              # binding IPv6 only ([::]:2222), so IPv4 clients (127.0.0.1, 192.168.0.54,
+              # 10.8.0.1) got "Connection refused" even though sshd/UFW were healthy.
+              # FIX: add an explicit IPv4 ListenStream via a drop-in on ssh.socket, then
+              # reload + restart the socket so it binds 0.0.0.0:2222 as well.
               nsenter -t 1 -m -u -i -n -p -- sh -c '
-                echo "=== restart + enable sshd ===";
+                echo "=== add IPv4 ListenStream drop-in for ssh.socket ===";
+                mkdir -p /etc/systemd/system/ssh.socket.d;
+                printf "%s\n" "[Socket]" "ListenStream=" "ListenStream=0.0.0.0:2222" "ListenStream=[::]:2222" > /etc/systemd/system/ssh.socket.d/10-ipv4-2222.conf;
+                echo "--- drop-in written ---";
+                cat /etc/systemd/system/ssh.socket.d/10-ipv4-2222.conf;
+
+                echo "=== reload systemd + restart ssh.socket and ssh.service ===";
+                systemctl daemon-reload;
+                systemctl restart ssh.socket 2>/dev/null || true;
                 (systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null) && echo "ssh restarted";
                 systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null || true;
-                systemctl status ssh --no-pager 2>/dev/null || systemctl status sshd --no-pager 2>/dev/null || true;
 
-                echo "=== re-open UFW for port 2222 (was configured before) ===";
-                if command -v ufw >/dev/null 2>&1; then
-                  ufw allow 2222/tcp || true;
-                  ufw reload 2>/dev/null || true;
-                  echo "--- ufw status ---";
-                  ufw status verbose | grep -E "2222|Status" || ufw status verbose || true;
-                else
-                  echo "ufw not installed on host";
-                fi;
+                echo "=== ensure UFW allows 2222 (idempotent) ===";
+                if command -v ufw >/dev/null 2>&1; then ufw allow 2222/tcp || true; ufw reload 2>/dev/null || true; fi;
 
-                echo "=== listening sockets ===";
-                ss -tlnp | grep -E ":22 |:2222 " || echo "no ssh socket listening on 22/2222";
+                echo "=== listening sockets (want BOTH 0.0.0.0:2222 AND [::]:2222) ===";
+                ss -tlnp | grep ":2222 " || echo "no ssh socket listening on 2222";
 
-                echo "=== interfaces + wg address ===";
-                ip -brief addr show | grep -Ei "wg|eth|ens|enp|UP" || ip -brief addr show;
-
-                echo "=== ufw full status (numbered) ===";
-                ufw status numbered 2>/dev/null || true;
-
-                echo "=== iptables filter INPUT (look for REJECT hitting 2222 / wg0) ===";
-                iptables -S INPUT 2>/dev/null | head -50 || true;
-                echo "--- ufw-user-input / ufw-before-input chains ---";
-                iptables -S 2>/dev/null | grep -Ei "2222|ufw-user-input|ufw-before-input|wg0" | head -60 || true;
-
-                echo "=== nat PREROUTING/OUTPUT (kube-proxy port hijack of 2222?) ===";
-                iptables -t nat -S 2>/dev/null | grep -E "2222|:22 |dpt:22" | head -40 || echo "no nat rule mentioning 22/2222";
-
-                echo "=== is anything else bound to 2222 (conflicting)? ===";
-                ss -tlnp | grep ":2222 " || true;
-
-                echo "=== quick self-test from the host to its own wg + lan IP on 2222 ===";
-                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 10.8.0.1 2222) || echo "nc to 10.8.0.1:2222 failed/absent";
-                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 127.0.0.1 2222) || echo "nc to 127.0.0.1:2222 failed/absent";
+                echo "=== self-test over IPv4 (the failing path) ===";
+                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 127.0.0.1 2222) || echo "nc 127.0.0.1:2222 failed/absent";
+                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 192.168.0.54 2222) || echo "nc 192.168.0.54:2222 failed/absent";
+                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 10.8.0.1 2222) || echo "nc 10.8.0.1:2222 failed/absent";
               '

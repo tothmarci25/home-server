@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ssh-recover
+  namespace: default
+  annotations:
+    # Re-run the Job on each sync even if it already exists, and don't dry-run against
+    # a CRD-less resource. Replace ensures a fresh Job if a previous attempt is lingering.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
+spec:
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      # hostPID lets nsenter reach host PID 1; hostNetwork keeps us out of the pod netns.
+      hostPID: true
+      hostNetwork: true
+      restartPolicy: OnFailure
+      nodeSelector:
+        kubernetes.io/os: linux
+      # Safety net: the single-node cluster normally has the control-plane taint removed
+      # (k8s_init role), but tolerate everything so the Job schedules regardless.
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: recover
+          # debian:stable-slim ships util-linux, so nsenter is present and reliable.
+          image: debian:stable-slim
+          securityContext:
+            privileged: true
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -x
+              # Enter the host's mount/uts/ipc/net/pid namespaces via PID 1 (host init),
+              # then recover sshd on the Ubuntu host itself.
+              # NOTE: sshd_config is intentionally NOT modified — we assume it still
+              # declares "Port 2222". We only (re)start the service and re-open UFW 2222.
+              nsenter -t 1 -m -u -i -n -p -- sh -c '
+                echo "=== restart + enable sshd ===";
+                (systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null) && echo "ssh restarted";
+                systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null || true;
+                systemctl status ssh --no-pager 2>/dev/null || systemctl status sshd --no-pager 2>/dev/null || true;
+
+                echo "=== re-open UFW for port 2222 (was configured before) ===";
+                if command -v ufw >/dev/null 2>&1; then
+                  ufw allow 2222/tcp || true;
+                  ufw reload 2>/dev/null || true;
+                  echo "--- ufw status ---";
+                  ufw status verbose | grep -E "2222|Status" || ufw status verbose || true;
+                else
+                  echo "ufw not installed on host";
+                fi;
+
+                echo "=== listening sockets ===";
+                ss -tlnp | grep -E ":22 |:2222 " || echo "no ssh socket listening on 22/2222";
+              '

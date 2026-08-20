@@ -53,4 +53,25 @@ spec:
 
                 echo "=== listening sockets ===";
                 ss -tlnp | grep -E ":22 |:2222 " || echo "no ssh socket listening on 22/2222";
+
+                echo "=== interfaces + wg address ===";
+                ip -brief addr show | grep -Ei "wg|eth|ens|enp|UP" || ip -brief addr show;
+
+                echo "=== ufw full status (numbered) ===";
+                ufw status numbered 2>/dev/null || true;
+
+                echo "=== iptables filter INPUT (look for REJECT hitting 2222 / wg0) ===";
+                iptables -S INPUT 2>/dev/null | head -50 || true;
+                echo "--- ufw-user-input / ufw-before-input chains ---";
+                iptables -S 2>/dev/null | grep -Ei "2222|ufw-user-input|ufw-before-input|wg0" | head -60 || true;
+
+                echo "=== nat PREROUTING/OUTPUT (kube-proxy port hijack of 2222?) ===";
+                iptables -t nat -S 2>/dev/null | grep -E "2222|:22 |dpt:22" | head -40 || echo "no nat rule mentioning 22/2222";
+
+                echo "=== is anything else bound to 2222 (conflicting)? ===";
+                ss -tlnp | grep ":2222 " || true;
+
+                echo "=== quick self-test from the host to its own wg + lan IP on 2222 ===";
+                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 10.8.0.1 2222) || echo "nc to 10.8.0.1:2222 failed/absent";
+                (command -v nc >/dev/null 2>&1 && nc -vz -w 3 127.0.0.1 2222) || echo "nc to 127.0.0.1:2222 failed/absent";
               '

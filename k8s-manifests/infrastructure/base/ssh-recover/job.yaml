@@ -3,16 +3,12 @@ kind: Job
 metadata:
   name: ssh-recover
   namespace: default
-  annotations:
-    # Run as an Argo CD Sync hook. BeforeHookCreation deletes any prior ssh-recover Job
-    # before creating a new one on each sync, so we never hit the immutable-Job / missing
-    # spec.selector error that plain Replace=true causes on re-sync.
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 4
-  # No ttlSecondsAfterFinished: keep the completed pod so its logs stay readable.
-  # hook-delete-policy: BeforeHookCreation removes it only on the NEXT sync.
+  # Plain managed Job: no Replace, no TTL, no hook. The pod shows up in the Argo CD
+  # resource tree and its logs stay readable after completion. To re-run, delete the
+  # existing Job in the Argo CD UI first, then sync (avoids the immutable-Job/spec.selector
+  # error that Replace=true caused on a completed Job).
   template:
     spec:
       # hostPID lets nsenter reach host PID 1; hostNetwork keeps us out of the pod netns.

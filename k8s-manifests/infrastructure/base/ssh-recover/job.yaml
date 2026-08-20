@@ -4,9 +4,11 @@ metadata:
   name: ssh-recover
   namespace: default
   annotations:
-    # Re-run the Job on each sync even if it already exists, and don't dry-run against
-    # a CRD-less resource. Replace ensures a fresh Job if a previous attempt is lingering.
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
+    # Run as an Argo CD Sync hook. BeforeHookCreation deletes any prior ssh-recover Job
+    # before creating a new one on each sync, so we never hit the immutable-Job / missing
+    # spec.selector error that plain Replace=true causes on re-sync.
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 4
   ttlSecondsAfterFinished: 600

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Cloudflare DDNS updater every {{ cloudflare_ddns_interval_minutes }} minutes
+
+[Timer]
+OnBootSec=30s
+# Wall-clock schedule: fires on absolute minute marks, so a missed or failed
+# run can never break the chain (the OnUnitActiveSec design silently stopped).
+OnCalendar=*:0/{{ cloudflare_ddns_interval_minutes }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,21 @@
+---
+# defaults file for roles/cloudflare_ddns
+
+# --- Cloudflare record configuration ---
+# Sourced from .env (exported by run_playbook.sh). Set these in .env.
+cloudflare_ddns_zone_name: "{{ lookup('env', 'CLOUDFLARE_DDNS_ZONE_NAME') }}"
+cloudflare_ddns_record_name: "{{ lookup('env', 'CLOUDFLARE_DDNS_RECORD_NAME') }}"
+cloudflare_ddns_ttl: 120
+cloudflare_ddns_proxied: false
+
+# --- API token (SECRET) ---
+# Sourced from .env (CLOUDFLARE_DDNS_API_TOKEN). Never commit a real value here.
+cloudflare_ddns_api_token: "{{ lookup('env', 'CLOUDFLARE_DDNS_API_TOKEN') }}"
+
+# --- Schedule ---
+cloudflare_ddns_interval_minutes: 10
+
+# --- Paths ---
+cloudflare_ddns_python: /usr/bin/python3
+cloudflare_ddns_script_path: /usr/local/bin/cloudflare_ddns.py
+cloudflare_ddns_env_file: /etc/cloudflare-ddns.env

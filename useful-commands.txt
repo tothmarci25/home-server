@@ -16,6 +16,9 @@ Velero
   kubectl exec -it -n velero deploy/velero -- /velero backup describe test-run-2
   kubectl exec -it -n velero deploy/velero -- /velero backup logs test-run-2
 
+  Delete (removes both the Backup object and the backup data in R2; prompts for confirmation, add --confirm to skip)
+  kubectl exec -it -n velero deploy/velero -- /velero backup delete test-run-2 --confirm
+
   Restore
   kubectl exec -it -n velero deploy/velero -- /velero restore create --from-backup test-run-2
 
@@ -48,4 +51,23 @@ Monitoring (kube-prometheus-stack: Prometheus + Alertmanager + Grafana)
   kubectl -n monitoring port-forward svc/kube-prometheus-stack-alertmanager 9093:9093
   set -o allexport && source .env && set +o allexport && ssh -i $ANSIBLE_SSH_KEY -N -L 9093:localhost:9093 $SERVER_USER@$SERVER_IP
 
+
+
+Storage
+  sudo mount UUID=<your-uuid> /mnt/mydisk
+  kubectl scale deployment plex radarr sonarr qbittorrent filebrowser jackett --replicas=0
+
+Cloudflare DDNS
+  systemctl status cloudflare-ddns.service
+  systemctl status cloudflare-ddns.timer
+  systemctl list-timers cloudflare-ddns.timer --all
+  journalctl -u cloudflare-ddns.service -n 5
+
+
+Pod deletion: 
+kubectl patch application <app-name> -n argocd \
+  --type merge \
+  -p '{"metadata":{"finalizers":null}}'
+
+kubectl delete pod velero-6f78b47dc4-cm4mf -n velero  --grace-period=0 --force
 

@@ -1,0 +1,11 @@
+---
+# handlers file for roles/cloudflare_ddns
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: run cloudflare-ddns now
+  systemd:
+    name: cloudflare-ddns.service
+    state: started

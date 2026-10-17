@@ -1,0 +1,11 @@
+[Unit]
+Description=Cloudflare DDNS Updater
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Token lives in a root-only env file, kept out of the script and out of git.
+EnvironmentFile={{ cloudflare_ddns_env_file }}
+ExecStart={{ cloudflare_ddns_python }} {{ cloudflare_ddns_script_path }}
+TimeoutStartSec=20

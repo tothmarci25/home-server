@@ -1,0 +1,18 @@
+galaxy_info:
+  role_name: cloudflare_ddns
+  author: tothmarci25
+  description: Cloudflare dynamic DNS updater installed as a systemd service + timer on Ubuntu
+
+  license: MIT
+
+  min_ansible_version: 2.1
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+
+  galaxy_tags: []
+
+dependencies: []

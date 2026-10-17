@@ -1,0 +1,5 @@
+- name: Setup Cloudflare DDNS updater
+  hosts: staging,production
+  become: yes
+  roles:
+    - cloudflare_ddns

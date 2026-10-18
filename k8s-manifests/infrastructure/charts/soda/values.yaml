@@ -1,0 +1,34 @@
+# Default values for the soda chart. Production overrides live in
+# k8s-manifests/infrastructure/values/production/soda-values.yaml (referenced
+# by the ArgoCD Application). Keep this self-contained so `helm template` works.
+soda:
+  # Start at 2 (host soda-0 + one client). Scale later only if node RAM allows.
+  replicas: 2
+
+  # Step A smoke test uses the stock Selkies image (no Wine). Step B swaps this
+  # for the custom Wine image. Pin by tag/digest.
+  image: ghcr.io/selkies-project/selkies/desktop:2.0.0-ubuntu26.04
+  imagePullPolicy: IfNotPresent
+
+  basicAuthUser: player
+
+  # Host GIDs for /dev/dri (video, render) — read via `getent group video render`
+  # on the node at implement time. Placeholder values; override in production.
+  gpuGroups:
+    - 44
+    - 993
+
+  # Per-pod node-local storage (outside Longhorn, not backed up by Velero).
+  storageClassName: soda-data-pv
+  localPathBase: /mnt/ssd/soda
+  dataSize: 20Gi
+  nodeName: tothmarci25-homeserver
+
+  shmSize: 2Gi
+
+  resources:
+    requests:
+      cpu: "2"
+      memory: 2Gi
+    limits:
+      memory: 4Gi

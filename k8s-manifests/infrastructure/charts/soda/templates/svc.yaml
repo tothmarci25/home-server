@@ -1,0 +1,46 @@
+{{- $replicas := int (.Values.soda.replicas | default 2) -}}
+# Headless Service: stable per-pod DNS (soda-0.soda-headless.soda.svc, ...).
+# This is how SODA clients reach the fixed host (soda-0) in the TCP/IP Join
+# dialog — Layer 2, pod-to-pod game traffic.
+apiVersion: v1
+kind: Service
+metadata:
+  name: soda-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: soda
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  clusterIP: None
+  selector:
+    app: soda
+  ports:
+    - name: web
+      port: 8080
+      targetPort: web
+{{- range $i := until $replicas }}
+---
+# Per-pod web Service: selects the StatefulSet's auto-applied pod-identity label
+# so it resolves to exactly ONE pod (no round-robin). racing-{{ add $i 1 }}.home -> soda-{{ $i }}-web
+# -> pod soda-{{ $i }}. Layer 1, the browser stream.
+apiVersion: v1
+kind: Service
+metadata:
+  name: soda-{{ $i }}-web
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: soda
+    soda-pod: soda-{{ $i }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  type: ClusterIP
+  selector:
+    statefulset.kubernetes.io/pod-name: soda-{{ $i }}
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+      protocol: TCP
+{{- end }}

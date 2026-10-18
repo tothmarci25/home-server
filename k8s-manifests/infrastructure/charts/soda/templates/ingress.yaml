@@ -1,0 +1,42 @@
+{{- $replicas := int (.Values.soda.replicas | default 2) -}}
+# nginx-ingress watches all namespaces, so this Ingress can live in `soda` and
+# route to the soda Services directly (the shared Ingress in `default` cannot
+# cross namespaces). Long websocket timeouts keep the Selkies stream alive.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: soda
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  ingressClassName: nginx
+  rules:
+    # racing.home -> soda-0 (the fixed host). Used for the Step-A smoke test and
+    # as player 1's hostname.
+    - host: racing.home
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: soda-0-web
+                port:
+                  number: 80
+    # Per-player hostnames: racing-1.home -> soda-0, racing-2.home -> soda-1, ...
+    {{- range $i := until $replicas }}
+    - host: {{ printf "racing-%d.home" (add $i 1) }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: soda-{{ $i }}-web
+                port:
+                  number: 80
+    {{- end }}

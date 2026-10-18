@@ -35,3 +35,7 @@ data:
     address=/grafana.home/{{ .Values.nginxIngressIP }}
     address=/prometheus.home/{{ .Values.nginxIngressIP }}
     address=/alertmanager.home/{{ .Values.nginxIngressIP }}
+    # SODA racing: racing.home -> host pod; racing-N.home -> per-player pods.
+    address=/racing.home/{{ .Values.nginxIngressIP }}
+    address=/racing-1.home/{{ .Values.nginxIngressIP }}
+    address=/racing-2.home/{{ .Values.nginxIngressIP }}

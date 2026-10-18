@@ -37,6 +37,13 @@
     - vault-audit
   when: vault_disk_name | default('') | length > 0
 
+- name: Ensure soda game data directories exist (one per StatefulSet ordinal)
+  file:
+    path: "/mnt/{{ soda_disk_name }}/soda/{{ item }}"
+    state: directory
+  loop: "{{ range(0, soda_replicas | int) | list }}"
+  when: soda_disk_name | default('') | length > 0
+
 - name: Label node (disk present)
   command: >
     kubectl label node {{ k8s_node_name }}

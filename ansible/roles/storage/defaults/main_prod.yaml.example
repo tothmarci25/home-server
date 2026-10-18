@@ -174,6 +174,12 @@ longhorn_pvcs:
 # Vault PV configuration
 vault_disk_name: "ssd"   # disk from usb_disks used for vault storage paths
 
+# SODA game PV configuration: one node-local dir per StatefulSet ordinal.
+# Keep soda_replicas in sync with soda.replicas in the chart's production values
+# (k8s-manifests/infrastructure/values/production/soda-values.yaml).
+soda_disk_name: "ssd"    # disk from usb_disks used for soda game data paths
+soda_replicas: 2
+
 # Node and repo info
 k8s_node_name: "{{ inventory_hostname }}"
 repo_root: "{{ playbook_dir }}/../.."

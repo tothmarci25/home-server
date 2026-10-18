@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: soda
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/tothmarci25/home-server
+    targetRevision: HEAD
+    path: k8s-manifests/infrastructure/charts/soda
+    helm:
+      valueFiles:
+        - ../../values/production/soda-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: soda
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

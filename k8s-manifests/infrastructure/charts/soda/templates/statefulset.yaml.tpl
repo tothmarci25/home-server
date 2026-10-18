@@ -23,7 +23,7 @@ spec:
         # via `getent group video render` on the node; these are the measured
         # values for tothmarci25-homeserver. Best-effort GPU passthrough — if
         # the iGPU does not come through, Selkies falls back to llvmpipe.
-        supplementaryGroups:
+        supplementalGroups:
           {{- toYaml (.Values.soda.gpuGroups | default (list 44 993)) | nindent 10 }}
       containers:
         - name: soda

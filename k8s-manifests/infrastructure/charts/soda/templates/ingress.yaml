@@ -11,9 +11,21 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Selkies needs a secure browser context (HTTPS). TLS terminates here with a
+    # self-signed cert (internal/LAN only); redirect HTTP->HTTPS so the browser
+    # always lands on a secure origin.
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     argocd.argoproj.io/sync-wave: "6"
 spec:
   ingressClassName: nginx
+  tls:
+    - secretName: {{ .Values.soda.tlsSecretName | default "soda-tls" | quote }}
+      hosts:
+        - racing.home
+        {{- range $i := until $replicas }}
+        - {{ printf "racing-%d.home" (add $i 1) }}
+        {{- end }}
   rules:
     # racing.home -> soda-0 (the fixed host). Used for the Step-A smoke test and
     # as player 1's hostname.

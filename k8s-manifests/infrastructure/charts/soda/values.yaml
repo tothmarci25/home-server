@@ -26,6 +26,11 @@ soda:
 
   shmSize: 2Gi
 
+  # TLS Secret (kubernetes.io/tls) the Ingress terminates with. Created manually
+  # out-of-band (self-signed, internal-only) — NOT managed by this chart and NOT
+  # in git. See the chart README / plan for the openssl + kubectl commands.
+  tlsSecretName: soda-tls
+
   resources:
     requests:
       cpu: "2"

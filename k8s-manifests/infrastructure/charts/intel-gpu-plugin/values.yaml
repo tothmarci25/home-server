@@ -1,0 +1,6 @@
+# Image tag pins the upstream intel-gpu-plugin release (vendored from v0.32.1).
+imageTag: "0.32.1"
+
+# How many containers may share the single physical iGPU. Set to the max player
+# count so scaling soda replicas (up to 6) never requires changing the plugin.
+sharedDevNum: 6

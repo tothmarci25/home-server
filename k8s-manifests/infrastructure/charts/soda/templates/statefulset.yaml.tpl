@@ -18,13 +18,6 @@ spec:
         app: soda
     spec:
       serviceAccountName: soda
-      securityContext:
-        # Host GIDs for /dev/dri access (video, render). Read at implement time
-        # via `getent group video render` on the node; these are the measured
-        # values for tothmarci25-homeserver. Best-effort GPU passthrough — if
-        # the iGPU does not come through, Selkies falls back to llvmpipe.
-        supplementalGroups:
-          {{- toYaml (.Values.soda.gpuGroups | default (list 44 993)) | nindent 10 }}
       containers:
         - name: soda
           image: {{ .Values.soda.image | quote }}
@@ -52,8 +45,6 @@ spec:
             - name: vault-secrets
               mountPath: /mnt/secrets-store
               readOnly: true
-            - name: dev-dri
-              mountPath: /dev/dri
             - name: soda-data
               mountPath: /home/ubuntu/soda
           resources:
@@ -62,6 +53,9 @@ spec:
               memory: {{ .Values.soda.resources.requests.memory | default "2Gi" | quote }}
             limits:
               memory: {{ .Values.soda.resources.limits.memory | default "4Gi" | quote }}
+              # One shared slot on the iGPU (provided by the intel-gpu-plugin
+              # DaemonSet, which injects /dev/dri with the correct cgroup rule).
+              gpu.intel.com/i915: "1"
       volumes:
         - name: shared-memory
           emptyDir:
@@ -73,10 +67,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: soda-vault
-        - name: dev-dri
-          hostPath:
-            path: /dev/dri
-            type: Directory
   volumeClaimTemplates:
     - metadata:
         name: soda-data

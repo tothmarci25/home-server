@@ -1,0 +1,91 @@
+# Standalone Intel GPU device plugin (no operator, no NFD) — advertises the
+# node's iGPU as the schedulable resource gpu.intel.com/i915 and injects the
+# /dev/dri device into requesting pods with the correct cgroup allow-rule
+# (which a bare hostPath mount does NOT do — that was the EPERM we hit).
+#
+# Vendored from upstream deployments/gpu_plugin/base at v0.32.1:
+#   https://github.com/intel/intel-device-plugins-for-kubernetes
+# Added: -shared-dev-num so multiple soda player pods can share the single iGPU.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: intel-gpu-plugin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: intel-gpu-plugin
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  selector:
+    matchLabels:
+      app: intel-gpu-plugin
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: intel-gpu-plugin
+    spec:
+      containers:
+      - name: intel-gpu-plugin
+        # shared-dev-num > 1 lets that many containers share one physical GPU.
+        # Set to the max player count (6) so scaling soda replicas never needs a
+        # plugin change.
+        args:
+          - -shared-dev-num={{ .Values.sharedDevNum | default 6 }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        image: {{ printf "intel/intel-gpu-plugin:%s" (.Values.imageTag | default "0.32.1") | quote }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "45Mi"
+            cpu: 40m
+          limits:
+            memory: "90Mi"
+            cpu: 100m
+        volumeMounts:
+        - name: devfs
+          mountPath: /dev/dri
+          readOnly: true
+        - name: sysfsdrm
+          mountPath: /sys/class/drm
+          readOnly: true
+        - name: kubeletsockets
+          mountPath: /var/lib/kubelet/device-plugins
+        - name: cdipath
+          mountPath: /var/run/cdi
+      volumes:
+      - name: devfs
+        hostPath:
+          path: /dev/dri
+      - name: sysfsdrm
+        hostPath:
+          path: /sys/class/drm
+      - name: kubeletsockets
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+      - name: cdipath
+        hostPath:
+          path: /var/run/cdi
+          type: DirectoryOrCreate
+      nodeSelector:
+        kubernetes.io/arch: amd64

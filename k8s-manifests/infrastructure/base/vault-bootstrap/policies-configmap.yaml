@@ -29,3 +29,7 @@ data:
     path "kv/data/monitoring/grafana" {
       capabilities = ["read"]
     }
+  soda.hcl: |
+    path "kv/data/soda/auth" {
+      capabilities = ["read"]
+    }

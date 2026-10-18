@@ -97,6 +97,17 @@ spec:
                 audience=vault \
                 ttl=24h
 
+              echo "Writing soda policy..."
+              vault policy write soda /policies/soda.hcl
+
+              echo "Creating soda role..."
+              vault write auth/kubernetes/role/soda \
+                bound_service_account_names=soda \
+                bound_service_account_namespaces=soda \
+                policies=soda \
+                audience=vault \
+                ttl=24h
+
               echo "Vault bootstrap completed successfully."
 
           env:

@@ -18,6 +18,18 @@ spec:
         app: soda
     spec:
       serviceAccountName: soda
+      # The intel-gpu-plugin grants the cgroup device-allow rule for /dev/dri,
+      # but the render node (/dev/dri/renderD128) is mode crw-rw---- owned by the
+      # host's render group (gid 993); card0 by video (gid 44). The container user
+      # (ubuntu) must be a member of those NUMERIC gids or open() returns EPERM
+      # ("Failed to open the given device!"). These are HOST gids read via
+      # `stat -c %g /dev/dri/*` / `getent group video render` on the node — the
+      # container's /etc/group may map the same numbers to different names.
+      securityContext:
+        supplementalGroups:
+        {{- range .Values.soda.gpuGroups }}
+          - {{ . }}
+        {{- end }}
       containers:
         - name: soda
           image: {{ .Values.soda.image | quote }}

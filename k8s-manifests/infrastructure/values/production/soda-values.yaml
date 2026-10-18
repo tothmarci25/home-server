@@ -3,9 +3,9 @@ soda:
   # 2-player start (host soda-0 + client soda-1). Bump only with RAM headroom.
   replicas: 2
 
-  # Step A: stock Selkies (no Wine) to prove streaming through the ingress.
-  # Step B replaces this with the custom Wine image.
-  image: ghcr.io/selkies-project/selkies/desktop:2.0.0-ubuntu26.04
+  # Step B: custom Selkies + 32-bit Wine image (public on GHCR).
+  # Built from charts/soda/image/Dockerfile for linux/amd64.
+  image: ghcr.io/tothmarci25/soda-selkies:0.1.0
 
   # Node GIDs confirmed on tothmarci25-homeserver via `getent group video render`:
   #   video:x:44:  render:x:993:

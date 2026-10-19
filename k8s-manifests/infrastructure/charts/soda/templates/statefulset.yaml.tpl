@@ -44,6 +44,11 @@ spec:
               value: "true"
             - name: SELKIES_ENABLE_HTTPS
               value: "false"
+            # SODA caps at 640x480. Disable dynamic resize so the desktop stays
+            # pinned (soda-launch.sh calls `selkies-resize 640x480`) instead of
+            # snapping to the browser window size and leaving a tiny game window.
+            - name: SELKIES_ENABLE_RESIZE
+              value: "false"
             - name: SELKIES_BASIC_AUTH_USER
               value: {{ .Values.soda.basicAuthUser | default "player" | quote }}
             - name: SELKIES_BASIC_AUTH_PASSWORD

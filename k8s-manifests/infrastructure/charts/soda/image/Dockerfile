@@ -39,6 +39,15 @@ RUN curl -fsSL https://raw.githubusercontent.com/Winetricks/winetricks/master/sr
         -o /usr/local/bin/winetricks \
     && chmod +x /usr/local/bin/winetricks
 
+# Auto-launch the game on connect. HOME (/home/ubuntu) is ephemeral — only the
+# PVC at /home/ubuntu/soda persists — so the launcher + its XDG autostart entry
+# must live in the image, not under ~/.config. The launcher pins the stream to
+# 640x480 (SODA's native mode) and starts the game in a matching Wine virtual
+# desktop; see soda-launch.sh.
+COPY soda-launch.sh /usr/local/bin/soda-launch.sh
+COPY soda.desktop /etc/xdg/autostart/soda.desktop
+RUN chmod +x /usr/local/bin/soda-launch.sh
+
 # Return to the image's default (non-root) user. The Selkies base runs the
 # desktop as `ubuntu` (uid 1000); inherit its entrypoint untouched.
 USER ubuntu

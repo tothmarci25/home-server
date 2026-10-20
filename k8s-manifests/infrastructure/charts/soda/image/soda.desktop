@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=SODA Off-Road Racing
-Comment=Auto-launch the game when the desktop session starts
-Exec=/usr/local/bin/soda-launch.sh
-Terminal=false
-# LXQt reads /etc/xdg/autostart; keep it scoped to this session's desktops.
-OnlyShowIn=LXQt;openbox;
-X-GNOME-Autostart-enabled=true

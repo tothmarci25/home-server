@@ -1,8 +1,15 @@
 #!/bin/bash
-# Auto-launch SODA Off-Road Racing inside the Selkies desktop.
+# Auto-launch SODA Off-Road Racing in kiosk mode.
 #
-# Started by the XDG autostart entry (/etc/xdg/autostart/soda.desktop) once the
-# LXQt session is up, so $DISPLAY is set and the compositor is running.
+# Invoked by Selkies' SELKIES_RUN_AFTER_CONNECT hook (set in the StatefulSet),
+# which fires after a client connects — NOT by XDG autostart. We run with the
+# LXQt desktop dropped (START_LXQT=false), so there is no panel/terminal/file
+# manager behind the game; the display server + Selkies are already up when this
+# runs (so $DISPLAY should be set, but we still wait for it defensively below).
+#
+# RUN_AFTER_CONNECT re-runs each time a client connects while no others are
+# connected, so this script can be invoked more than once per pod life — it is
+# made idempotent below (a second connect must not spawn a second game).
 #
 # SODA is a 1997 title with a hard internal 640x480 cap, so we:
 #   1. pin the Selkies desktop to 640x480 (resize is disabled via
@@ -15,6 +22,14 @@
 # Game files + Wine prefix live on the per-pod PVC at /home/ubuntu/soda (HOME
 # itself is ephemeral — only this path persists).
 set -u
+
+# Idempotency: RUN_AFTER_CONNECT can fire again on reconnect. If the game is
+# already running, re-pin the resolution (cheap, harmless) and bail so we never
+# stack a second offroad.exe.
+if pgrep -f "offroad.exe" >/dev/null 2>&1; then
+  selkies-resize 640x480 || true
+  exit 0
+fi
 
 GAME_DIR="/home/ubuntu/soda/game/soda_off_road_racing"
 export WINEPREFIX="/home/ubuntu/soda/prefix"

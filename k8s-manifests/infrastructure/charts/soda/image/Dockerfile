@@ -39,13 +39,18 @@ RUN curl -fsSL https://raw.githubusercontent.com/Winetricks/winetricks/master/sr
         -o /usr/local/bin/winetricks \
     && chmod +x /usr/local/bin/winetricks
 
-# Auto-launch the game on connect. HOME (/home/ubuntu) is ephemeral — only the
-# PVC at /home/ubuntu/soda persists — so the launcher + its XDG autostart entry
-# must live in the image, not under ~/.config. The launcher pins the stream to
-# 640x480 (SODA's native mode) and starts the game in a matching Wine virtual
-# desktop; see soda-launch.sh.
+# Auto-launch the game. HOME (/home/ubuntu) is ephemeral — only the PVC at
+# /home/ubuntu/soda persists — so the launcher must live in the image, not under
+# ~/.config. The launcher pins the stream to 640x480 (SODA's native mode) and
+# starts the game in a matching Wine virtual desktop; see soda-launch.sh.
+#
+# The launcher is invoked by Selkies' SELKIES_RUN_AFTER_CONNECT hook (set in the
+# StatefulSet), NOT by an XDG autostart entry: we run in kiosk mode with the LXQt
+# desktop dropped (START_LXQT=false), and XDG autostart is an lxqt-session
+# function — with LXQt gone it never fires. RUN_AFTER_CONNECT fires on client
+# connect regardless of the desktop, so the game launches with no panel/terminal/
+# file-manager behind it.
 COPY soda-launch.sh /usr/local/bin/soda-launch.sh
-COPY soda.desktop /etc/xdg/autostart/soda.desktop
 RUN chmod +x /usr/local/bin/soda-launch.sh
 
 # Return to the image's default (non-root) user. The Selkies base runs the

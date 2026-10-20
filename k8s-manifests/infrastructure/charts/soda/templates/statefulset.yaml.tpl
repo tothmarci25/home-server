@@ -49,6 +49,21 @@ spec:
             # snapping to the browser window size and leaving a tiny game window.
             - name: SELKIES_ENABLE_RESIZE
               value: "false"
+            # Stream-quality defaults, baked server-side so no per-browser tuning
+            # is needed. The client's own defaults are jpeg_quality=60 /
+            # paint_over_jpeg_quality=90, which looked soft; pin them to max. For
+            # these range-style vars "X-X" is an initial value that also LOCKS it
+            # (per `selkies --help`), so the client dashboard can't drift off max.
+            - name: SELKIES_ENCODER        # CPU-striped JPEG (what we settled on)
+              value: "jpeg"
+            - name: SELKIES_JPEG_QUALITY   # UI "Base Quality"; default was 60
+              value: "100-100"
+            - name: SELKIES_PAINT_OVER_JPEG_QUALITY  # UI "Paintover Quality"
+              value: "100-100"
+            - name: SELKIES_USE_PAINT_OVER_QUALITY   # high-quality static paint-overs
+              value: "true"
+            - name: SELKIES_FRAMERATE      # lock 60 FPS
+              value: "60-60"
             - name: SELKIES_BASIC_AUTH_USER
               value: {{ .Values.soda.basicAuthUser | default "player" | quote }}
             - name: SELKIES_BASIC_AUTH_PASSWORD

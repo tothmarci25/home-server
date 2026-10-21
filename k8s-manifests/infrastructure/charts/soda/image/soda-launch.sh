@@ -55,6 +55,25 @@ if [ ! -d "${WINEPREFIX}/drive_c" ]; then
   wineserver -w 2>/dev/null || true
 fi
 
+# Native DirectPlay — required for SODA's TCP/IP multiplayer.
+#
+# SODA uses Microsoft DirectPlay. Wine's built-in dpwsockx is broadcast-only and
+# cannot host, so pod-to-pod multiplayer (separate IPs, no broadcast) needs the
+# native MS DLLs that winetricks installs (dplayx/dpnet/dpwsockx/dplaysvr.exe as
+# native overrides). We install once per prefix, guarded by a marker file so it
+# never re-runs on an already-provisioned PVC. winetricks downloads the DirectX
+# redistributable the first time, so this needs pod egress to the internet; its
+# cache must live on the writable PVC (HOME/.cache is root-owned, read-only).
+DPLAY_MARKER="${WINEPREFIX}/.directplay-installed"
+if [ ! -f "${DPLAY_MARKER}" ]; then
+  export W_CACHE="/home/ubuntu/soda/.cache/winetricks"
+  mkdir -p "${W_CACHE}"
+  if winetricks -q directplay; then
+    wineserver -w 2>/dev/null || true
+    touch "${DPLAY_MARKER}"
+  fi
+fi
+
 cd "${GAME_DIR}" || exit 0
 # Virtual desktop matched to the game's resolution → fills the 640x480 stream.
 exec wine explorer /desktop=soda,640x480 offroad.exe

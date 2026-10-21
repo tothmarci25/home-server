@@ -2,10 +2,8 @@
 
 Runs the 1997 Windows game **SODA Off-Road Racing** (`offroad.exe`) in the cluster,
 streamed to a web browser via **Selkies** (browser desktop + streaming) and **Wine**.
-Internal / LAN-only, deployed to **production** via ArgoCD.
-
-> Status: **Step A complete** — stock Selkies desktop streams in the browser over
-> HTTPS. Wine + the game itself come in Steps B–D (see the plan).
+Internal / LAN-only, deployed to **production** via ArgoCD. Supports 2-player TCP/IP
+racing (one pod per player; `soda-0` is the host).
 
 ---
 
@@ -15,118 +13,112 @@ Internal / LAN-only, deployed to **production** via ArgoCD.
 |-------|-----------|
 | Namespace | `soda` (isolated, like vault/cloudflared) |
 | Workload | **StatefulSet** `soda`, one pod per player (`soda-0`, `soda-1`, …). `soda-0` is the fixed multiplayer host. |
-| Streaming | Selkies, WebSocket transport, port `8080` inside the pod. One desktop per pod. |
+| Streaming | Selkies, WebSocket transport, port `8080` inside the pod. One desktop per pod, locked to a single-app **kiosk** (no LXQt). |
 | Routing | Per-pod ClusterIP Service `soda-N-web` (selects `statefulset.kubernetes.io/pod-name`, so exactly one pod — no round-robin). |
-| Pod-to-pod | Headless Service `soda-headless` → stable DNS `soda-0.soda-headless.soda.svc` (used by the game's LAN multiplayer in Step D). |
-| Ingress | Own Ingress **in the `soda` namespace** (the shared `default` Ingress can't cross namespaces). TLS terminates here. |
+| Pod-to-pod | Headless Service `soda-headless` → stable DNS `soda-0.soda-headless.soda.svc` (the multiplayer host address). |
+| Ingress | Own Ingress **in the `soda` namespace**. TLS terminates here. |
 | Hostnames | `racing.home` → `soda-0`; `racing-1.home` → `soda-0`, `racing-2.home` → `soda-1`, … |
-| Secret | Selkies basic-auth password from Vault (`kv/soda/auth`) via secrets-store CSI → synced to K8s Secret `soda-auth`. |
-| Storage | Per-pod node-local PV (`storageClassName: soda-data-pv`, `/mnt/ssd/soda/<ordinal>`). **Outside Longhorn, not backed up by Velero** (game data is disposable). |
-| GPU | Best-effort iGPU passthrough: `/dev/dri` hostPath + `supplementalGroups: [44, 993]` (host `video`/`render` GIDs). Falls back to llvmpipe software rendering. |
+| Secret | Selkies basic-auth password from Vault (`kv/soda/auth`) via secrets-store CSI → K8s Secret `soda-auth`. User is `player`. |
+| Storage | Per-pod node-local PV (`storageClassName: soda-data-pv`, `/mnt/ssd/soda/<ordinal>`). Holds the game + Wine prefix. **Not backed up** (disposable). |
+| GPU | Intel iGPU with hardware H.264 encode. The **intel-gpu-plugin** DaemonSet advertises `gpu.intel.com/i915` and injects `/dev/dri`; the pod sets `supplementalGroups: [44, 993]` (host `video`/`render` GIDs) so the render node is openable. Falls back to llvmpipe if absent. |
 
 ### Files
 
 ```
 k8s-manifests/infrastructure/charts/soda/
-  Chart.yaml
-  values.yaml                      # chart defaults
-  templates/
-    namespace.yaml
-    service-account.yaml           # SA `soda`, bound by the Vault role
-    secret-provider.yaml           # SecretProviderClass soda-vault -> Secret soda-auth
-    data-pv.yaml.tpl               # one node-local PV per replica
-    statefulset.yaml.tpl           # the StatefulSet (one pod per player)
-    svc.yaml                       # soda-headless + per-pod soda-N-web Services
-    ingress.yaml                   # racing(-N).home, TLS, websocket timeouts
-
-k8s-manifests/infrastructure/values/production/soda-values.yaml   # prod overrides
-k8s-manifests/overlays/production/apps/soda.yaml                   # ArgoCD Application
+  templates/            # namespace, SA, SecretProviderClass, PV tpl,
+                        #   StatefulSet tpl, Services, Ingress
+  image/
+    Dockerfile          # Selkies base + 32-bit Wine + VA driver + winetricks
+    soda-launch.sh      # kiosk launcher (connect hook): prefix + DirectPlay + game
+k8s-manifests/infrastructure/values/production/soda-values.yaml   # prod overrides (image tag, gpuGroups, storage)
+k8s-manifests/overlays/production/apps/soda.yaml                  # ArgoCD Application
 ```
 
-Edited elsewhere:
-- `infrastructure/base/vault-bootstrap/policies-configmap.yaml` + `job.yaml` — soda read policy + kubernetes-auth role.
-- `infrastructure/charts/dnsmasq/templates/config.yaml` — `racing.home`, `racing-1/2.home` DNS.
-- `ansible/roles/storage/{defaults/main.yaml,tasks/mount.yaml}` (+ `main_prod.yaml.example`) — create `/mnt/ssd/soda/<N>` dirs.
+Touches elsewhere: `vault-bootstrap` (soda policy + k8s-auth role), `charts/dnsmasq`
+(`racing(-N).home` DNS), `ansible/roles/storage` (`/mnt/ssd/soda/<N>` dirs).
 
 ---
 
-## Deploy from scratch (what was needed for Step A)
+## Deploy on a fresh cluster
 
-These are the **manual, out-of-band prerequisites** (secrets and a self-signed cert —
-things we don't put in git). Everything else is GitOps: commit and ArgoCD syncs it.
+Everything in git is GitOps (commit → ArgoCD syncs). These are the **manual
+out-of-band prerequisites** only — secrets, a cert, and node-local dirs that we don't
+put in git. Do them before (or alongside) the first sync.
 
-### 1. Node GPU GIDs (already confirmed: `video`=44, `render`=993)
+### 1. Node storage directories
 
 ```bash
-# on the server:
-getent group video render
-# -> video:x:44:  render:x:993:
-```
-Set these in `soda-values.yaml` under `soda.gpuGroups` if they ever differ.
-
-### 2. Node storage directories
-
-Created declaratively by the storage role, but on an existing node create them once:
-```bash
-# on the server:
+# on the server — one dir per replica:
 sudo mkdir -p /mnt/ssd/soda/0 /mnt/ssd/soda/1
 ```
-(Or re-run: `./run_playbook.sh production ansible/playbooks/generate_storages.yaml`)
+(Or run `./run_playbook.sh production ansible/playbooks/generate_storages.yaml`.)
 
-### 3. Vault secret — Selkies login password
+### 2. Vault secret — the Selkies login password
 
 ```bash
 # requires a logged-in vault CLI (see vault-commands.txt)
 vault kv put kv/soda/auth password=<LONG-RANDOM-PASSWORD>
 ```
 The Vault policy + role (`soda`) are created by the vault-bootstrap job on sync.
-Username is fixed to `player` (set via `soda.basicAuthUser`).
+Username is fixed to `player`.
 
-### 4. Self-signed TLS cert — REQUIRED (Selkies needs a secure browser context)
+### 3. Self-signed TLS cert — REQUIRED
 
-Selkies refuses to run over plain HTTP ("This application requires a secure
-connection (HTTPS)"). TLS terminates at the Ingress with a self-signed cert.
+Selkies refuses to run over plain HTTP ("requires a secure connection"). TLS
+terminates at the Ingress with a self-signed cert covering every racing hostname:
 
 ```bash
-# generate a cert covering all racing hostnames (10-year validity):
 openssl req -x509 -newkey rsa:2048 -nodes \
   -keyout /tmp/soda-tls.key -out /tmp/soda-tls.crt -days 3650 \
   -subj '/CN=racing.home' \
   -addext 'subjectAltName=DNS:racing.home,DNS:racing-1.home,DNS:racing-2.home'
 
-# create the TLS secret in the soda namespace:
 kubectl create secret tls soda-tls -n soda \
   --cert=/tmp/soda-tls.crt --key=/tmp/soda-tls.key
 
-# clean up:
 rm -f /tmp/soda-tls.key /tmp/soda-tls.crt
 ```
+Adding more players? Regenerate with the extra `racing-N.home` SANs and re-apply.
 
-> If you add more players (more replicas), regenerate the cert with the extra
-> `racing-N.home` SANs and recreate the secret (`kubectl create secret tls ... --dry-run=client -o yaml | kubectl apply -f -`).
+### 4. Confirm node GPU GIDs
 
-### 5. Sync in ArgoCD
+```bash
+# on the server — should be video=44, render=993:
+getent group video render
+```
+If they differ, update `soda.gpuGroups` in `soda-values.yaml`.
 
-Commit the manifests → ArgoCD syncs the `soda` Application. Then:
+### 5. Sync in ArgoCD, then check
+
 ```bash
 kubectl -n soda rollout status statefulset/soda
 kubectl -n soda get pods,svc,pvc,ingress,secretproviderclass
 ```
 
+On first launch each pod self-provisions on its PVC: builds the 32-bit Wine prefix,
+installs **native DirectPlay** (`winetricks directplay` — required for multiplayer;
+needs pod egress to download the DirectX redist once), then launches the game. This
+is one-time, guarded by a `.directplay-installed` marker.
+
+> **Game files.** The game binary is seeded to each pod's PVC at
+> `/home/ubuntu/soda/game/soda_off_road_racing/` (e.g. `kubectl -n soda cp`). This is
+> not in git. Each new replica needs its copy seeded the same way.
+
 ---
 
-## Accessing it
+## Playing
 
-1. Browse **`https://racing-1.home`** (note **https** — HTTP redirects to it).
-2. **Self-signed cert warning is expected** (`ERR_CERT_AUTHORITY_INVALID`). Either:
-   - click **Advanced → Proceed** (in Chrome, you can type `thisisunsafe` on the warning page), or
-   - trust the cert permanently (macOS):
-     ```bash
-     kubectl -n soda get secret soda-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ~/soda-racing.crt
-     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/soda-racing.crt
-     ```
-3. Log in: user `player`, password = the Vault value from step 3.
-4. The Selkies desktop streams. (`racing.home` and `racing-1.home` both reach `soda-0`.)
+1. Browse **`https://racing-1.home`** (note **https** — HTTP redirects).
+2. **Self-signed cert warning is expected.** Click through (in Chrome, type
+   `thisisunsafe` on the warning page), or trust the cert:
+   ```bash
+   kubectl -n soda get secret soda-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ~/soda-racing.crt
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/soda-racing.crt
+   ```
+3. Log in: user `player`, password from step 2 above. The game launches automatically.
+4. **Multiplayer:** on `soda-0` (via `racing-1.home`) host a TCP/IP game; on `soda-1`
+   (via `racing-2.home`) Join and type the host as **`soda-0.soda-headless.soda.svc`**.
 
 ---
 
@@ -134,33 +126,27 @@ kubectl -n soda get pods,svc,pvc,ingress,secretproviderclass
 
 | Symptom | Cause / fix |
 |---------|-------------|
-| Black screen, "requires a secure connection (HTTPS)" | No TLS. Do prereq #4 and browse `https://`. |
-| `ERR_CERT_AUTHORITY_INVALID` | Normal for self-signed. Proceed anyway, or trust the cert (see Accessing #2). |
-| StatefulSet permanently **OutOfSync** in ArgoCD, pod `securityContext` is `{}` | A dropped/unknown field. We hit this with a typo — the field is `supplementalGroups`, **not** `supplementaryGroups`. K8s silently drops unknown fields. Verify: `kubectl -n soda get statefulset soda -o jsonpath='{.spec.template.spec.securityContext}'`. |
-| Pods stuck `Pending` | PVs didn't bind. Check `/mnt/ssd/soda/<N>` dirs exist (prereq #2) and `kubectl -n soda get pvc,pv \| grep soda`. Binding matches on `storageClassName`=`soda-data-pv` + `ReadWriteOnce` + size. |
-| Pod won't start, CSI mount error | Vault secret missing (`kv/soda/auth`) or the `soda` Vault role/policy not yet created. Check the vault-bootstrap job ran: `kubectl -n vault logs job/vault-bootstrap`. |
-| `racing.home` doesn't resolve | dnsmasq entry missing / client not using the cluster DNS. Entries are in `charts/dnsmasq/templates/config.yaml`. |
-| GPU not used (llvmpipe) | Verify in-pod (Step C): `vainfo`, `glxinfo \| grep renderer`. Needs the Mesa/Intel VA driver in the image. Acceptable fallback for this game. |
+| Black screen, "requires a secure connection (HTTPS)" | No TLS. Do prereq #3 and browse `https://`. |
+| Pods stuck `Pending` | PVs didn't bind. Check `/mnt/ssd/soda/<N>` dirs exist (prereq #1) and `kubectl -n soda get pvc,pv \| grep soda`. |
+| Pod won't start, CSI mount error | Vault secret missing (`kv/soda/auth`) or the `soda` Vault role not created yet. Check `kubectl -n vault logs job/vault-bootstrap`. |
+| `racing.home` doesn't resolve | dnsmasq entry missing / client not on the cluster DNS. Entries in `charts/dnsmasq/templates/config.yaml`. |
+| Game window never appears after login | The connect hook (`SELKIES_RUN_AFTER_CONNECT`) didn't finish — on a fresh PVC it builds the Wine prefix + installs DirectPlay first (can take a minute, needs internet egress). Check `kubectl -n soda exec soda-0 -- cat /home/ubuntu/soda/prefix/.directplay-installed` (marker present = done) and the pod logs. |
+| Multiplayer: host's session never shows, or "can't create session" | Native DirectPlay missing in that prefix (Wine's built-in `dpwsockx` is broadcast-only and can't host). Re-run `winetricks -q directplay` in the prefix with `W_CACHE=/home/ubuntu/soda/.cache/winetricks` (PVC-backed cache) and pod egress. Join with the DNS host `soda-0.soda-headless.soda.svc`, not broadcast. |
+| GPU not used (llvmpipe), `vainfo` → "Failed to open the given device!" | The pod user must be in host GIDs `44`/`993` via `supplementalGroups` for `/dev/dri`. Verify `kubectl -n soda exec soda-0 -- id` lists 44 and 993. Working: `vainfo` shows `Intel iHD driver` + a `VAEntrypointEncSliceLP` line. |
+| GPU `allocatable: 0`, pods `FailedScheduling: Insufficient gpu.intel.com/i915` | intel-gpu-plugin crashed on `too many open files` (node inotify exhausted). Fix in `k8s_prepare` role (`/etc/sysctl.d/k8s.conf`); live: `sudo sysctl -w fs.inotify.max_user_instances=8192` then `kubectl -n intel-gpu-plugin rollout restart ds/intel-gpu-plugin`. |
+| StatefulSet permanently **OutOfSync**, pod `securityContext` is `{}` | A typo'd field was dropped silently. The field is `supplementalGroups` (not `supplementaryGroups`). Verify `kubectl -n soda get statefulset soda -o jsonpath='{.spec.template.spec.securityContext}'`. |
+| Game looks soft/blurry when stretched | 640×480 upscaled to a non-integer size smooths. Quality is already maxed server-side. In the Selkies dashboard (`Ctrl+Shift+M`) turn **Anti-aliasing OFF**; for crisp pixels size the window to an integer multiple (e.g. 1280×960 = 2×). This softness is the hard ceiling for a 640×480 title. |
 
 ---
 
-## Verify GPU GIDs actually landed
+## Notes
 
-```bash
-kubectl -n soda get statefulset soda -o jsonpath='{.spec.template.spec.securityContext}{"\n"}'
-# want: {"supplementalGroups":[44,993]}
-
-kubectl -n soda exec soda-0 -- id
-# groups should include 44 and 993
-```
-
----
-
-## Roadmap
-
-- **A ✅ — Stock Selkies desktop, reachable over HTTPS.** (done)
-- **B — Wine-enabled custom image** (`FROM` the Selkies base + 32-bit Wine + audio + Mesa/VA driver).
-- **C — Install + auto-launch SODA** per pod (`SELKIES_RUN_AFTER_CONNECT`), single-player first.
-- **D — 2-player TCP/IP racing** (`soda-0` hosts, `soda-1` joins `soda-0.soda-headless.soda.svc`).
-
-Full plan: `~/.claude/plans/sparkling-sleeping-petal.md`.
+- **Kiosk / hardening.** `START_LXQT=false` drops the desktop; the game launches via
+  `SELKIES_RUN_AFTER_CONNECT=/usr/local/bin/soda-launch.sh` (idempotent). Clipboard,
+  file transfer, mic/webcam, sharing and the command channel are all disabled; the
+  container runs with `drop: [ALL]`, no priv-escalation, `RuntimeDefault` seccomp, and
+  `automountServiceAccountToken: false`. The pod's `supplementalGroups: [44, 993]`
+  (needed for the iGPU) is orthogonal to those drops.
+- **Not yet done:** `readOnlyRootFilesystem` (needs scratch-path enumeration first);
+  NetworkPolicy egress fencing (plain Flannel has no policy controller — silently
+  ignored); remote play behind SSO (Authelia/oauth2-proxy + coturn, or WireGuard).

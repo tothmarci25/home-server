@@ -33,3 +33,10 @@ data:
     path "kv/data/soda/auth" {
       capabilities = ["read"]
     }
+    path "kv/data/coturn/auth" {
+      capabilities = ["read"]
+    }
+  coturn.hcl: |
+    path "kv/data/coturn/auth" {
+      capabilities = ["read"]
+    }

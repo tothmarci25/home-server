@@ -108,6 +108,17 @@ spec:
                 audience=vault \
                 ttl=24h
 
+              echo "Writing coturn policy..."
+              vault policy write coturn /policies/coturn.hcl
+
+              echo "Creating coturn role..."
+              vault write auth/kubernetes/role/coturn \
+                bound_service_account_names=coturn \
+                bound_service_account_namespaces=coturn \
+                policies=coturn \
+                audience=vault \
+                ttl=24h
+
               echo "Vault bootstrap completed successfully."
 
           env:

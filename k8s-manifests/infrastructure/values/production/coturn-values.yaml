@@ -1,0 +1,31 @@
+# Production overrides for the coturn chart. coturn is the live, hardened TURN
+# relay for SODA remote WebRTC media. See REMOTE-ACCESS.md for the threat model,
+# the shared-secret wiring, and the manual DNS/Access/router steps.
+coturn:
+  image: coturn/coturn:4.6.2
+
+  # MetalLB LoadBalancer IP (coturn-pool). Must match coturnIP in network-values.yaml.
+  # This is the LAN IP the home router forwards UDP to.
+  loadBalancerIP: "192.168.0.9"
+
+  # Unproxied A-record -> home WAN IP (kept current by the cloudflare_ddns role).
+  # Selkies targets this as SELKIES_TURN_HOST. Used as realm + external-ip.
+  turnHost: turn.tothmarci25.com
+
+  listeningPort: 3478
+
+  # Tiny relay range: 2-player SODA needs ~2 ports; 11 is generous headroom and a
+  # trivial router forward.
+  minPort: 49200
+  maxPort: 49210
+
+  # DoS containment. Tune bpsCapacity to the measured production uplink after a
+  # real speedtest (see REMOTE-ACCESS.md "DDoS / threat-model scope").
+  totalQuota: 10
+  userQuota: 4
+  maxBps: 6000000
+  bpsCapacity: 30000000
+
+  # Relay only to the Selkies pods. Flannel pod network on this cluster is
+  # 10.244.0.0/16. Narrow to the soda pods' /24 if the CIDR is known-stable.
+  allowedPeerCidr: "10.244.0.0/16"

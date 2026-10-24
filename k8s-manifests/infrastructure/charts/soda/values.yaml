@@ -12,6 +12,32 @@ soda:
 
   basicAuthUser: player
 
+  # --- Remote play (Phase 1) --------------------------------------------------
+  # When true, render the public Ingress (racing/racing-2 -> soda-0/soda-1) for
+  # Cloudflare-fronted remote WebRTC play. Off by default so a bare `helm template`
+  # stays LAN-only. Enabled in production values. See REMOTE-ACCESS.md.
+  publicHosts: false
+  publicHost: racing.tothmarci25.com
+  publicHost2: racing-2.tothmarci25.com
+
+  # WebRTC transport. When webrtc.enabled is true the StatefulSet switches Selkies
+  # to SELKIES_MODE=webrtc (no WebSocket fallback) and wires it to coturn with an
+  # ephemeral HMAC credential derived from the shared secret (same value coturn
+  # holds as static-auth-secret). Off by default -> LAN WebSocket pixel path.
+  webrtc:
+    enabled: false
+    turnHost: turn.tothmarci25.com
+    turnPort: 3478
+    turnProtocol: udp
+    # Public STUN for server-reflexive candidates; coturn handles the relay.
+    stunHost: stun.l.google.com
+    stunPort: 19302
+    # WebRTC video codec. Decided at implementation: x264enc is broadly supported
+    # by Selkies' WebRTC path and far lighter than JPEG-over-WebSocket for 60fps
+    # motion on a home uplink. Override if the pinned image advertises something
+    # better (check `selkies --help` / the image's encoder list at deploy time).
+    encoder: x264enc
+
   # Host GIDs for /dev/dri (video, render) — read via `getent group video render`
   # on the node at implement time. Placeholder values; override in production.
   gpuGroups:

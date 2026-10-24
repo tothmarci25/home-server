@@ -1,0 +1,55 @@
+# Default values for the coturn chart. Production overrides live in
+# k8s-manifests/infrastructure/values/production/coturn-values.yaml (referenced
+# by the ArgoCD Application). Keep this self-contained so `helm template` works.
+#
+# coturn is the self-hosted TURN relay for SODA's remote WebRTC media (UDP). It
+# ships ACTIVE and REQUIRED: the plan runs WebRTC-only with no WebSocket
+# fallback, so remote play depends on this relay being reachable over its open
+# UDP port (router forward is a hard dependency). Fully hardened + LAN-blind.
+# See REMOTE-ACCESS.md for the threat model and the manual router/DNS steps.
+coturn:
+  image: coturn/coturn:4.6.2
+
+  # LoadBalancer IP handed out by MetalLB (coturn-pool). Must match coturnIP in
+  # network-values.yaml, and this is the LAN IP the home router forwards UDP to.
+  loadBalancerIP: "192.168.0.9"
+
+  # Public hostname clients reach the relay on (unproxied A-record -> home WAN IP,
+  # kept current by the cloudflare_ddns role). Selkies targets this as
+  # SELKIES_TURN_HOST. Used as coturn's `realm` and external-ip advertisement.
+  turnHost: turn.tothmarci25.com
+
+  # TURN listener (the forwarded port). UDP only (no TCP listener). Consider a
+  # non-standard port at the router to dodge blanket :3478 scans (REMOTE-ACCESS.md).
+  listeningPort: 3478
+
+  # Narrow relay port range -> only these are forwarded on the router, instead of
+  # coturn's default 49152-65535. Each WebRTC session uses ~1 relay port (media is
+  # bundled onto one port), so 2 players need ~2. This range (11 ports) is ample
+  # headroom for 2-player SODA + reconnect churn, and keeps the router forward
+  # tiny. Revisit only if soda.replicas grows well beyond 2.
+  minPort: 49200
+  maxPort: 49210
+
+  # Resource/DoS quotas. These CONTAIN whoever gets past the HMAC auth gate; they
+  # do NOT filter unauthorized traffic (the ephemeral credential does that) and
+  # cannot stop a volumetric flood at the WAN link (see REMOTE-ACCESS.md).
+  # Tune bps-capacity to the measured production uplink after a real speedtest.
+  totalQuota: 10        # max simultaneous allocations server-wide
+  userQuota: 4          # max simultaneous allocations per credential
+  maxBps: 6000000       # per-allocation cap, bits/sec (~6 Mbps, one 640x480 stream + headroom)
+  bpsCapacity: 30000000 # server-wide cap, bits/sec (~30 Mbps; leave headroom for Plex/tunnel)
+
+  # Peers coturn is ALLOWED to relay to: the Selkies pods only. Single-purpose
+  # relay. In Phase 1 this is the soda pod CIDR; since NetworkPolicy isn't
+  # enforceable on Flannel, this coturn-side allowlist is the real fence.
+  # Resolve the actual soda pod CIDR at deploy time; the Flannel pod network is
+  # 10.244.0.0/16 by default on this cluster.
+  allowedPeerCidr: "10.244.0.0/16"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 64Mi
+    limits:
+      memory: 128Mi

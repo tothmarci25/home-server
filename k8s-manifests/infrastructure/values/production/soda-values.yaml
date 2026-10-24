@@ -19,3 +19,22 @@ soda:
   localPathBase: /mnt/ssd/soda
   dataSize: 20Gi
   nodeName: tothmarci25-homeserver
+
+  # --- Remote play (Phase 1) --------------------------------------------------
+  # Public Cloudflare-fronted hosts for remote WebRTC play, gated by Cloudflare
+  # Access. racing -> soda-0 (race host), racing-2 -> soda-1 (joiner). See
+  # REMOTE-ACCESS.md for the manual Cloudflare DNS + Access policy + router steps.
+  publicHosts: true
+  publicHost: racing.tothmarci25.com
+  publicHost2: racing-2.tothmarci25.com
+
+  webrtc:
+    enabled: true
+    turnHost: turn.tothmarci25.com
+    turnPort: 3478
+    turnProtocol: udp
+    stunHost: stun.l.google.com
+    stunPort: 19302
+    # Verify against the pinned image's encoder list at deploy time; x264enc is
+    # the safe WebRTC default. Swap if the image advertises a lighter HW codec.
+    encoder: x264enc

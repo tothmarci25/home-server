@@ -1,0 +1,35 @@
+# LoadBalancer Service: MetalLB hands out coturnIP (coturn-pool). This LAN IP is
+# the target the home router forwards 3478/udp + the relay port range to. UDP
+# only -- no TCP listener is exposed (see turnserver.conf: no-tcp). The relay
+# range is tiny (minPort-maxPort, ~11 ports for 2-player SODA) so it is cheap to
+# enumerate here and cheap to forward on the router.
+{{- $min := int .Values.coturn.minPort -}}
+{{- $count := int (add (sub .Values.coturn.maxPort .Values.coturn.minPort) 1) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: coturn
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    metallb.universe.tf/address-pool: coturn-pool
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.coturn.loadBalancerIP | quote }}
+  # Preserve the client source IP so coturn sees real remote addresses (matters
+  # for quotas/logging), not the node's.
+  externalTrafficPolicy: Local
+  selector:
+    app: coturn
+  ports:
+    - name: turn-udp
+      port: {{ .Values.coturn.listeningPort }}
+      targetPort: turn-udp
+      protocol: UDP
+    {{- range $i := until $count }}
+    {{- $p := add $min $i }}
+    - name: relay-{{ $p }}
+      port: {{ $p }}
+      targetPort: {{ $p }}
+      protocol: UDP
+    {{- end }}

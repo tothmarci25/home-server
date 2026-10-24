@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coturn-config
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+data:
+  # turnserver.conf -- the hardened coturn config. The static-auth-secret is NOT
+  # here (it is injected at runtime from the Vault-synced Secret via the
+  # container command, so the secret never lands in a ConfigMap). See
+  # REMOTE-ACCESS.md for the full threat model.
+  turnserver.conf: |
+    # --- Listener: UDP only, the single forwarded port --------------------------
+    listening-port={{ .Values.coturn.listeningPort }}
+    # No TLS-TURN (5349) and no TCP listener: WebRTC media here is UDP. Fewer
+    # listeners = smaller surface on the forwarded hole.
+    no-tls
+    no-dtls
+    no-tcp
+    # Do not relay over TCP either (UDP relay only).
+    no-tcp-relay
+
+    # --- Ephemeral HMAC auth ----------------------------------------------------
+    # use-auth-secret + static-auth-secret (injected at runtime) => clients must
+    # present a time-limited username=<expiry-ts> / password=HMAC-SHA1(secret,
+    # username). No valid, unexpired credential => no allocation => no relay.
+    use-auth-secret
+    realm={{ .Values.coturn.turnHost }}
+    # Anti-replay / correctness.
+    stale-nonce
+    fingerprint
+
+    # --- Narrow relay port range ------------------------------------------------
+    # Only these ports are forwarded on the router (vs coturn's default
+    # 49152-65535). Each allocation consumes one.
+    min-port={{ .Values.coturn.minPort }}
+    max-port={{ .Values.coturn.maxPort }}
+
+    # --- LAN-blind peer policy (the critical protection for an open UDP port) ---
+    # coturn may ONLY relay to the Selkies pods. It can NEVER be aimed at the home
+    # LAN, loopback, link-local/cloud-metadata, or multicast -- no pivot to Vault,
+    # Plex, or the k8s API. denied rules are evaluated with allowed rules; deny
+    # the dangerous ranges explicitly and allow only the pod CIDR.
+    no-multicast-peers
+    denied-peer-ip=0.0.0.0-0.255.255.255
+    denied-peer-ip=10.0.0.0-10.255.255.255
+    denied-peer-ip=100.64.0.0-100.127.255.255
+    denied-peer-ip=127.0.0.0-127.255.255.255
+    denied-peer-ip=169.254.0.0-169.254.255.255
+    denied-peer-ip=172.16.0.0-172.31.255.255
+    denied-peer-ip=192.168.0.0-192.168.255.255
+    denied-peer-ip=::1
+    denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+    denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+    # Re-allow ONLY the Selkies pod CIDR (overrides the 10.0.0.0/8 deny above for
+    # just the Flannel pod network). Resolve the real soda pod range at deploy.
+    allowed-peer-ip={{ .Values.coturn.allowedPeerCidr }}
+
+    # --- Quotas (DoS containment; see REMOTE-ACCESS.md for what this does/does not do) ---
+    total-quota={{ .Values.coturn.totalQuota }}
+    user-quota={{ .Values.coturn.userQuota }}
+    max-bps={{ .Values.coturn.maxBps }}
+    bps-capacity={{ .Values.coturn.bpsCapacity }}
+
+    # --- Surface reduction ------------------------------------------------------
+    # No CLI admin interface, no web admin, no SQLite/Redis state.
+    no-cli
+    # Quiet logs to stdout (container-friendly).
+    log-file=stdout
+    simple-log
+    # Do not relay to our own listeners / loopback-y nonsense.
+    no-loopback-peers

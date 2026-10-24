@@ -149,4 +149,9 @@ is one-time, guarded by a `.directplay-installed` marker.
   (needed for the iGPU) is orthogonal to those drops.
 - **Not yet done:** `readOnlyRootFilesystem` (needs scratch-path enumeration first);
   NetworkPolicy egress fencing (plain Flannel has no policy controller — silently
-  ignored); remote play behind SSO (Authelia/oauth2-proxy + coturn, or WireGuard).
+  ignored).
+- **Remote play:** done (Phase 1) — remote WebRTC streaming over Cloudflare Access +
+  a hardened self-hosted coturn relay. Transport is **WebRTC** (not the LAN WebSocket
+  path). See [REMOTE-ACCESS.md](REMOTE-ACCESS.md) for the model, the shared-secret
+  wiring, the manual Cloudflare DNS / Access / router-forward steps, and the DDoS
+  threat-model scope.

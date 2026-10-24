@@ -69,10 +69,50 @@ spec:
             - name: SELKIES_ENABLE_RESIZE
               value: "false"
             # Stream-quality defaults, baked server-side so no per-browser tuning
-            # is needed. The client's own defaults are jpeg_quality=60 /
-            # paint_over_jpeg_quality=90, which looked soft; pin them to max. For
-            # these range-style vars "X-X" is an initial value that also LOCKS it
-            # (per `selkies --help`), so the client dashboard can't drift off max.
+            # is needed. Two transports:
+            #   - WebRTC (remote play): real video codec over UDP via coturn.
+            #   - WebSocket (LAN default): CPU-striped JPEG pixel path.
+            {{- if .Values.soda.webrtc.enabled }}
+            # --- WebRTC transport (remote play; UDP media via coturn) -----------
+            # WebRTC-only, no WebSocket fallback (locked decision). Signaling still
+            # rides the tunnel on 8080; media is UDP relayed by coturn. Selkies
+            # mints the time-limited HMAC TURN credential itself from the shared
+            # secret (same value coturn holds as static-auth-secret). See
+            # REMOTE-ACCESS.md.
+            - name: SELKIES_MODE
+              value: "webrtc"
+            - name: SELKIES_ENABLE_DUAL_MODE
+              value: "false"
+            - name: SELKIES_ENCODER
+              value: {{ .Values.soda.webrtc.encoder | default "x264enc" | quote }}
+            - name: SELKIES_FRAMERATE
+              value: "60-60"
+            - name: SELKIES_TURN_HOST
+              value: {{ .Values.soda.webrtc.turnHost | quote }}
+            - name: SELKIES_TURN_PORT
+              value: {{ .Values.soda.webrtc.turnPort | quote }}
+            - name: SELKIES_TURN_PROTOCOL
+              value: {{ .Values.soda.webrtc.turnProtocol | default "udp" | quote }}
+            - name: SELKIES_TURN_TLS
+              value: "false"
+            - name: SELKIES_STUN_HOST
+              value: {{ .Values.soda.webrtc.stunHost | quote }}
+            - name: SELKIES_STUN_PORT
+              value: {{ .Values.soda.webrtc.stunPort | quote }}
+            # Shared HMAC secret -> Selkies derives username=<expiry> /
+            # password=HMAC(secret, username) per browser. Synced from Vault by
+            # the soda SecretProviderClass (same secret coturn uses).
+            - name: SELKIES_TURN_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: soda-turn
+                  key: shared-secret
+            {{- else }}
+            # --- WebSocket transport (LAN default; near-lossless JPEG) ----------
+            # The client's own defaults are jpeg_quality=60 / paint_over_jpeg_quality=90,
+            # which looked soft; pin them to max. For these range-style vars "X-X"
+            # is an initial value that also LOCKS it (per `selkies --help`), so the
+            # client dashboard can't drift off max.
             - name: SELKIES_ENCODER        # CPU-striped JPEG (what we settled on)
               value: "jpeg"
             - name: SELKIES_JPEG_QUALITY   # UI "Base Quality"; default was 60
@@ -83,6 +123,7 @@ spec:
               value: "true"
             - name: SELKIES_FRAMERATE      # lock 60 FPS
               value: "60-60"
+            {{- end }}
             # --- Kiosk + lockdown (defense in depth; see SODA.md) ---------------
             # Drop the whole LXQt desktop: no panel, no terminal, no file manager,
             # no app launcher — just the display server + Selkies + the game. The

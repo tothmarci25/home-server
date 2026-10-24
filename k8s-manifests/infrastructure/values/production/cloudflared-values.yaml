@@ -2,5 +2,7 @@ tunnel:
   ingress:
     - hostname: plex.tothmarci25.com
     - hostname: argocd-webhook.tothmarci25.com
+    - hostname: racing.tothmarci25.com
+    - hostname: racing-2.tothmarci25.com
     # Catch-all rule (required)
     - service: http_status:404

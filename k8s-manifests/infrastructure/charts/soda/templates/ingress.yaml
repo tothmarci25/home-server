@@ -52,3 +52,50 @@ spec:
                 port:
                   number: 80
     {{- end }}
+{{- if .Values.soda.publicHosts }}
+---
+# Public remote-play Ingress (Phase 1). SEPARATE from the LAN Ingress above on
+# purpose: these hosts are TLS-terminated by Cloudflare at the edge and reach
+# nginx as plain HTTP on :80 via the cloudflared tunnel, so they must NOT carry
+# the self-signed TLS block or the force-ssl-redirect the .home hosts need (that
+# redirect would bounce Cloudflare-origin requests to an HTTPS endpoint that only
+# has the internal self-signed cert). Identity is gated by Cloudflare Access in
+# front of the tunnel; Selkies basic-auth still applies as a second layer. The
+# long websocket timeouts keep the WebRTC *signaling* channel alive (UDP media
+# does not traverse this path — it goes via coturn). See REMOTE-ACCESS.md.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: soda-public
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  ingressClassName: nginx
+  rules:
+    # racing.tothmarci25.com -> soda-0 (the race HOST / player 1).
+    - host: {{ .Values.soda.publicHost | default "racing.tothmarci25.com" | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: soda-0-web
+                port:
+                  number: 80
+    # racing-2.tothmarci25.com -> soda-1 (the JOINER / player 2).
+    - host: {{ .Values.soda.publicHost2 | default "racing-2.tothmarci25.com" | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: soda-1-web
+                port:
+                  number: 80
+{{- end }}

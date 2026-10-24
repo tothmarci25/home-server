@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coturn
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/tothmarci25/home-server
+    targetRevision: HEAD
+    path: k8s-manifests/infrastructure/charts/coturn
+    helm:
+      valueFiles:
+        - ../../values/production/coturn-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coturn
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

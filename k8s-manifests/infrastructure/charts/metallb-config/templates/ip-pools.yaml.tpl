@@ -34,3 +34,12 @@ metadata:
 spec:
   addresses:
     - {{ .Values.dnsmasqIP }}/32
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: coturn-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - {{ .Values.coturnIP }}/32

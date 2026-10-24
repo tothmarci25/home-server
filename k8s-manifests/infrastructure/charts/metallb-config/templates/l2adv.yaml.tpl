@@ -9,3 +9,4 @@ spec:
     - dnsmasq-pool
     - plex-pool
     - qbittorrent-pool
+    - coturn-pool

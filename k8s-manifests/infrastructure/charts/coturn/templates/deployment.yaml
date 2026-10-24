@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coturn
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coturn
+  template:
+    metadata:
+      labels:
+        app: coturn
+    spec:
+      serviceAccountName: coturn
+      # coturn never calls the Kubernetes API and the SA has no RBAC bindings;
+      # its auto-mounted token is dead weight and a liability. The secrets-store
+      # CSI driver mints its own audience-vault token independently, so turning
+      # this off does NOT break the Vault static-auth-secret flow (mirrors soda).
+      automountServiceAccountToken: false
+      containers:
+        - name: coturn
+          image: {{ .Values.coturn.image | quote }}
+          # Run coturn with the rendered config plus the static-auth-secret
+          # injected from the Vault-synced Secret at runtime, so the secret never
+          # appears in the ConfigMap. --external-ip advertises the public WAN
+          # address for relay candidates (coturn sits behind the router NAT).
+          command:
+            - sh
+            - -c
+            - |
+              exec turnserver \
+                -c /etc/coturn/turnserver.conf \
+                --static-auth-secret="$TURN_SHARED_SECRET" \
+                --external-ip="$EXTERNAL_IP"
+          env:
+            - name: TURN_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: coturn-auth
+                  key: shared-secret
+            # The public WAN IP coturn advertises as its relay candidate. The
+            # cloudflare_ddns role keeps turn.tothmarci25.com pointed at it; for
+            # the container we resolve it from the hostname at start. If the home
+            # IP is dynamic, a restart re-resolves. (Static external-ip avoids
+            # advertising the internal MetalLB IP to remote browsers.)
+            - name: EXTERNAL_IP
+              value: {{ .Values.coturn.turnHost | quote }}
+          ports:
+            - name: turn-udp
+              containerPort: {{ .Values.coturn.listeningPort }}
+              protocol: UDP
+            {{- $min := int .Values.coturn.minPort }}
+            {{- $count := int (add (sub .Values.coturn.maxPort .Values.coturn.minPort) 1) }}
+            {{- range $i := until $count }}
+            {{- $p := add $min $i }}
+            - name: relay-{{ $p }}
+              containerPort: {{ $p }}
+              protocol: UDP
+            {{- end }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config
+              mountPath: /etc/coturn
+              readOnly: true
+            - name: vault-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          resources:
+            requests:
+              cpu: {{ .Values.coturn.resources.requests.cpu | default "100m" | quote }}
+              memory: {{ .Values.coturn.resources.requests.memory | default "64Mi" | quote }}
+            limits:
+              memory: {{ .Values.coturn.resources.limits.memory | default "128Mi" | quote }}
+      volumes:
+        - name: config
+          configMap:
+            name: coturn-config
+        # Mounting the CSI volume is what forces the Vault secret to materialize
+        # into the coturn-auth Secret referenced above (mirrors soda).
+        - name: vault-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: coturn-vault

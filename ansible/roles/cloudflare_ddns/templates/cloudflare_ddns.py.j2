@@ -10,7 +10,11 @@ from CloudFlare import CloudFlare
 # so it is never written to disk in this script.
 API_TOKEN = os.environ["CLOUDFLARE_DDNS_API_TOKEN"]
 ZONE_NAME = "{{ cloudflare_ddns_zone_name }}"        # Your domain
-DNS_NAME = "{{ cloudflare_ddns_record_name }}"       # Full record to update
+DNS_NAMES = [                                        # Full records to update
+{% for name in cloudflare_ddns_record_names %}
+    "{{ name }}",
+{% endfor %}
+]
 TTL = {{ cloudflare_ddns_ttl }}                      # Time-to-live in seconds
 PROXIED = {{ 'True' if cloudflare_ddns_proxied else 'False' }}  # False = grey cloud (DNS only), True = orange cloud (proxied)
 
@@ -35,6 +39,37 @@ def get_public_ip():
     return None
 
 
+def update_record(cf, zone_id, dns_name, ip):
+    """Create-or-update a single A record to point at ip. One record's failure
+    must not block the others, so exceptions are caught and logged here."""
+    try:
+        records = cf.zones.dns_records.get(zone_id, params={"name": dns_name})
+        if not records:
+            print(f"❌ DNS record {dns_name} not found. Please create it manually first.")
+            return
+
+        record = records[0]
+        record_id = record["id"]
+        old_ip = record["content"]
+
+        if old_ip == ip:
+            print(f"✅ {dns_name} already up to date ({ip})")
+            return
+
+        cf.zones.dns_records.put(zone_id, record_id, data={
+            "type": "A",
+            "name": dns_name,
+            "content": ip,
+            "ttl": TTL,
+            "proxied": PROXIED
+        })
+
+        print(f"🔁 Updated {dns_name} from {old_ip} → {ip}")
+
+    except Exception as e:
+        print(f"❌ Error updating {dns_name}: {e}")
+
+
 def main():
   try:
     cf = CloudFlare(token=API_TOKEN)
@@ -43,40 +78,19 @@ def main():
         return
 
     try:
-        # Find Zone ID
+        # Find Zone ID (shared by every record in the zone)
         zones = cf.zones.get(params={"name": ZONE_NAME})
         if not zones:
             print(f"❌ Zone {ZONE_NAME} not found in Cloudflare account.")
             return
         zone_id = zones[0]["id"]
 
-        # Get the existing DNS record
-        records = cf.zones.dns_records.get(zone_id, params={"name": DNS_NAME})
-        if not records:
-            print(f"❌ DNS record {DNS_NAME} not found. Please create it manually first.")
-            return
-
-        record = records[0]
-        record_id = record["id"]
-        old_ip = record["content"]
-
-        if old_ip == ip:
-            print(f"✅ {DNS_NAME} already up to date ({ip})")
-            return
-
-        # Update the existing DNS record
-        cf.zones.dns_records.put(zone_id, record_id, data={
-            "type": "A",
-            "name": DNS_NAME,
-            "content": ip,
-            "ttl": TTL,
-            "proxied": PROXIED
-        })
-
-        print(f"🔁 Updated {DNS_NAME} from {old_ip} → {ip}")
+        # Point every managed record at the current public IP.
+        for dns_name in DNS_NAMES:
+            update_record(cf, zone_id, dns_name, ip)
 
     except Exception as e:
-        print(f"❌ Error updating Cloudflare record: {e}")
+        print(f"❌ Error updating Cloudflare records: {e}")
 
   except Exception as e:
         print(f"🔥 FATAL ERROR in main(): {e}")

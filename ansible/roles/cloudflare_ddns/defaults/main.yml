@@ -5,6 +5,10 @@
 # Sourced from .env (exported by run_playbook.sh). Set these in .env.
 cloudflare_ddns_zone_name: "{{ lookup('env', 'CLOUDFLARE_DDNS_ZONE_NAME') }}"
 cloudflare_ddns_record_name: "{{ lookup('env', 'CLOUDFLARE_DDNS_RECORD_NAME') }}"
+cloudflare_ddns_record_names:
+  - "{{ cloudflare_ddns_record_name }}"
+  - "turn.tothmarci25.com"
+
 cloudflare_ddns_ttl: 120
 cloudflare_ddns_proxied: false
 

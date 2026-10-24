@@ -4,7 +4,7 @@
 # range is tiny (minPort-maxPort, ~11 ports for 2-player SODA) so it is cheap to
 # enumerate here and cheap to forward on the router.
 {{- $min := int .Values.coturn.minPort -}}
-{{- $count := int (add (sub .Values.coturn.maxPort .Values.coturn.minPort) 1) -}}
+{{- $count := int (add (sub .Values.coturn.maxPort .Values.coturn.minPort) 1) }}
 apiVersion: v1
 kind: Service
 metadata:

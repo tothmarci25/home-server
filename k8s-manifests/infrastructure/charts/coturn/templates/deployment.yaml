@@ -68,6 +68,14 @@ spec:
             capabilities:
               drop:
                 - ALL
+              # turnserver requests cap_net_bind_service at startup and refuses
+              # to run with a fully-emptied bounding set, even though we bind only
+              # high UDP ports (3478 + 49200+). This single benign cap (bind
+              # privileged ports) is the minimum that lets it exec; verified on
+              # the node that drop:[ALL] alone yields "exec: Operation not
+              # permitted" (RC 126) and adding only NET_BIND_SERVICE fixes it.
+              add:
+                - NET_BIND_SERVICE
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:

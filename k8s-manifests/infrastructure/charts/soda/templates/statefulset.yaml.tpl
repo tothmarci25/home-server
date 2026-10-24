@@ -85,6 +85,22 @@ spec:
               value: "false"
             - name: SELKIES_ENCODER
               value: {{ .Values.soda.webrtc.encoder | default "x264enc" | quote }}
+            # Quality defaults pinned to the profile settled on in the Selkies
+            # dashboard (verified against this image's `selkies --help`):
+            #   CRF (constant-quality) mode, CRF locked at 5 (near-lossless),
+            #   full 4:4:4 color, paint-overs off. x264enc (CPU) is used because
+            #   constant-quality CRF is honored deterministically by the software
+            #   encoder; the tiny 640x480 frame makes CPU cost negligible.
+            # rate-control stays ENABLED so crf mode is actually honored; the
+            # "5-5" range on VIDEO_CRF is what LOCKS the value against client drift.
+            - name: SELKIES_RATE_CONTROL_MODE
+              value: "crf"
+            - name: SELKIES_VIDEO_CRF
+              value: "5-5"
+            - name: SELKIES_VIDEO_FULLCOLOR
+              value: "true"
+            - name: SELKIES_USE_PAINT_OVER_QUALITY
+              value: "false"
             - name: SELKIES_FRAMERATE
               value: "60-60"
             - name: SELKIES_TURN_HOST

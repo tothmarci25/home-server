@@ -60,8 +60,10 @@ data:
     # --- Quotas (DoS containment; see REMOTE-ACCESS.md for what this does/does not do) ---
     total-quota={{ .Values.coturn.totalQuota }}
     user-quota={{ .Values.coturn.userQuota }}
-    max-bps={{ .Values.coturn.maxBps }}
-    bps-capacity={{ .Values.coturn.bpsCapacity }}
+    # int64 forces plain-integer rendering: large YAML numbers otherwise serialize
+    # as scientific notation (6e+06), which coturn's config parser silently rejects.
+    max-bps={{ int64 .Values.coturn.maxBps }}
+    bps-capacity={{ int64 .Values.coturn.bpsCapacity }}
 
     # --- Surface reduction ------------------------------------------------------
     # No CLI admin interface, no web admin, no SQLite/Redis state.
@@ -69,5 +71,3 @@ data:
     # Quiet logs to stdout (container-friendly).
     log-file=stdout
     simple-log
-    # Do not relay to our own listeners / loopback-y nonsense.
-    no-loopback-peers

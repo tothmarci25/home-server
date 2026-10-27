@@ -37,10 +37,13 @@ spec:
               vault auth enable kubernetes || true
 
               echo "Configuring Kubernetes auth..."
+              # token_reviewer_jwt uses a long-lived (non-expiring) token from the
+              # vault-reviewer-token Secret, NOT the projected SA token (which
+              # expires and silently breaks all vault-auth logins when it does).
               vault write auth/kubernetes/config \
                 kubernetes_host="https://kubernetes.default.svc" \
                 kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-                token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
+                token_reviewer_jwt=@/reviewer-token/token
 
               echo "Writing cloudflared policy..."
               vault policy write cloudflared /policies/cloudflared.hcl
@@ -134,8 +137,14 @@ spec:
             - name: policies
               mountPath: /policies
               readOnly: true
+            - name: reviewer-token
+              mountPath: /reviewer-token
+              readOnly: true
 
       volumes:
         - name: policies
           configMap:
             name: vault-policies
+        - name: reviewer-token
+          secret:
+            secretName: vault-reviewer-token
